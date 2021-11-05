@@ -10,38 +10,45 @@ var upgrader = websocket.Upgrader{} // use default options
 
 func main() {
 	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/ws", upgradeToWs)
+	http.HandleFunc("/ws", wsHandler)
 	err := http.ListenAndServe(":8080", nil)
-	checkError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func upgradeToWs (writer http.ResponseWriter, req *http.Request) {
+func wsHandler(writer http.ResponseWriter, req *http.Request) {
+	// UPGRADE THE CONNECTION TO WS
 	wsConnection, err := upgrader.Upgrade(writer, req, nil)
-	checkError(err)
+	if err != nil {
+		log.Print("Error during connection upgradation:", err)
+		return
+	}
 	defer wsConnection.Close()
 
+	// EVENT LOOP
 	for {
 		messageType, message, err := wsConnection.ReadMessage()
-		checkError(err)
+		if err != nil {
+			log.Println("Error during reading message: ", err)
+			break
+		}
 
+		log.Println()
 		log.Printf("message: %s", message)
 		log.Printf("messageType: %d", messageType)
+		log.Println()
 
 		err = wsConnection.WriteMessage(messageType, []byte("Hello you"))
-		checkError(err)
+		if err != nil {
+			log.Println("Error during sending message: ", err)
+			break
+		}
 	}
-
-
 }
 
 func hello(writer http.ResponseWriter, req *http.Request) {
 	log.Println("/hello endpoint requested")
 	writer.Write([]byte("Hello World!"))
 	return
-}
-
-func checkError(err error){
-	if err != nil {
-		log.Fatal(err)
-	}
 }
