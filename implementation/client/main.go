@@ -20,11 +20,13 @@ func main() {
 
 	// Sends a message every second
 	for{
-		err = wsConnection.WriteMessage(websocket.TextMessage, []byte("Hello?"))
+		message := "Hello?"
+		err = wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
 		if err != nil {
 			log.Println("Error while sending message:", err)
 			return
 		}
+		log.Println("Me: " +  message)
 		time.Sleep(time.Second)
 	}
 }
@@ -37,6 +39,6 @@ func receiveHandler(wsConnection *websocket.Conn){
 			log.Println("Error while receiving message:", err)
 			return
 		}
-		log.Printf("Message: %s\n", msg)
+		log.Printf("Received Message: %s\n", msg)
 	}
 }

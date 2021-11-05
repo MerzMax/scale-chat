@@ -28,22 +28,15 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 
 	// EVENT LOOP
 	for {
-		messageType, message, err := wsConnection.ReadMessage()
+		_, message, err := wsConnection.ReadMessage()
 		if err != nil {
 			log.Println("Error during reading message: ", err)
 			break
 		}
 
-		log.Println()
-		log.Printf("message: %s", message)
-		log.Printf("messageType: %d", messageType)
-		log.Println()
+		log.Printf("Received Message: %s", message)
 
-		err = wsConnection.WriteMessage(messageType, []byte("Hello you"))
-		if err != nil {
-			log.Println("Error during sending message: ", err)
-			break
-		}
+		replyMessage(wsConnection)
 	}
 }
 
@@ -51,4 +44,13 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 	log.Println("/hello endpoint requested")
 	writer.Write([]byte("Hello World!"))
 	return
+}
+
+func replyMessage (wsConnection *websocket.Conn){
+	message := "Hello you! :)"
+	err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
+	if err != nil {
+		log.Println("Error during sending message: ", err)
+	}
+	log.Println("Me: " +  message)
 }
