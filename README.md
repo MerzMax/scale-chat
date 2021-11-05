@@ -9,7 +9,7 @@ see if we go along.
 GO
 * Create a corresponding client that publishes messages &rarr; will be implemented in GO
 * Simulate a lot of clients with the help of a load test and see how the server behaves
- 
+
 ## Questions that have to be answered: 
 * Communication protocol of clients and server 
     * Is there some sort of handshake?
@@ -21,7 +21,7 @@ GO
 * How to scale the clients? 
     * An idea could be docker containers; BUT this might lead into problems on a local mashine (starting 1000 dc 
     could result in performance bottlenecks)
-    * Start several processes in a docker contianer? %rarr; would be a break in the concept of docker
+    * Start several processes in a docker contianer? &rarr; would be a break in the concept of docker
 * How to measure the performance? What could be significant metrics? Is this even necessary?
 
 ### Communication Protocol
@@ -39,9 +39,10 @@ New chat message (global chat):
 > How to simulate the chat clients and how to measure the server?
 
 Metrics that could be usefull: 
-* Number of concurrent client connections 
+* Number of concurrent client connections &rarr; be aware of the OS limit for a process / mashine
 * Number of chat messages per second 
 * Hardware stats (cpu/ram)
+* Messagesize (variation of message size could lead to different problems)
 
 How to measure metrics: 
 * Prometheus for docker hardware stats (there is an adapter available)
@@ -54,7 +55,8 @@ Server Setup:
 
 Client Setup: 
 * To simplify the start of the clients in a reproducable environment the client could run in a docker container as well.
-There are several posibilities, how the clients clould be started with this approach:
+    
+    There are several posibilities, how the clients clould be started with this approach:
     1. Start several chat clients within one process
         * 1 process = 1 docker contianer
     2. Start several chat client processes
