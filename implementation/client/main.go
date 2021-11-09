@@ -63,7 +63,7 @@ func receiveHandler(wsConnection *websocket.Conn){
 	}
 }
 
-func sendHandler(wsConnection *websocket.Conn){
+func sendHandler(wsConnection *websocket.Conn) {
 	for {
 		message := "Hello?"
 		err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
