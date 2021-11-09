@@ -71,7 +71,7 @@ func sendHandler(wsConnection *websocket.Conn) {
 			log.Println("Error while sending message:", err)
 			return
 		}
-		log.Println("Me: " +  message)
+		log.Printf("Me: %s", message)
 		time.Sleep(time.Second)
 	}
 }
