@@ -37,7 +37,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 
 		log.Printf("Received Message: %s", message)
 
-		replyMessage(wsConnection)
+
 	}
 }
 
@@ -48,7 +48,7 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 }
 
 // Method sends a message to the connected client
-func replyMessage (wsConnection *websocket.Conn) {
+func replyMessage(wsConnection *websocket.Conn) {
 	message := "Hello you! :)"
 	err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
 	if err != nil {
