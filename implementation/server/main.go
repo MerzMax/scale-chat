@@ -17,8 +17,9 @@ func main() {
 	}
 }
 
+// Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
-	// UPGRADE THE CONNECTION TO WS
+	// Upgrade the http connection to ws
 	wsConnection, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
 		log.Print("Error during connection upgradation:", err)
@@ -26,7 +27,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 	defer wsConnection.Close()
 
-	// EVENT LOOP
+	// Listening for incoming messages
 	for {
 		_, message, err := wsConnection.ReadMessage()
 		if err != nil {
@@ -40,12 +41,14 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Event handler for the /hello endpoint
 func hello(writer http.ResponseWriter, req *http.Request) {
 	log.Println("/hello endpoint requested")
 	writer.Write([]byte("Hello World!"))
 	return
 }
 
+// Method sends a message to the connected client
 func replyMessage (wsConnection *websocket.Conn){
 	message := "Hello you! :)"
 	err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
