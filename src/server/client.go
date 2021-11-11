@@ -37,7 +37,7 @@ func (client *Client) HandleOutgoing() {
 	}
 }
 
-func (client *Client) HandleIncoming(storing chan *chat.Message) {
+func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 	defer func() {
 		err := client.wsConn.Close()
 		if err != nil {
@@ -60,6 +60,6 @@ func (client *Client) HandleIncoming(storing chan *chat.Message) {
 			continue
 		}
 
-		storing <- &message
+		broadcast <- &message
 	}
 }
