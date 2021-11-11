@@ -52,7 +52,7 @@ func main() {
 }
 
 // The method handles incoming ws messages
-func receiveHandler(wsConnection *websocket.Conn){
+func receiveHandler(wsConnection *websocket.Conn) {
 	for {
 		_, msg, err := wsConnection.ReadMessage()
 		if err != nil {
