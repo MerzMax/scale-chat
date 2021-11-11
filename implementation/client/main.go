@@ -59,7 +59,7 @@ func receiveHandler(wsConnection *websocket.Conn) {
 			log.Println("Error while receiving message:", err)
 			return
 		}
-		log.Printf("Received Message: %s\n", msg)
+		log.Printf("Received Message: %s", msg)
 	}
 }
 
