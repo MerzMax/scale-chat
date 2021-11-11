@@ -11,10 +11,10 @@ var upgrader = websocket.Upgrader{} // use default options
 var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
-var storing = make(chan *chat.Message)
+var broadcast = make(chan *chat.Message)
 
 func main() {
-	go writeChatHistory()
+	go broadcastMessages()
 
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/ws", wsHandler)
@@ -38,7 +38,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	clients = append(clients, &client)
 
 	go client.HandleOutgoing()
-	go client.HandleIncoming(storing)
+	go client.HandleIncoming(broadcast)
 }
 
 // Event handler for the /hello endpoint
@@ -57,11 +57,14 @@ func replyMessage(wsConn *websocket.Conn) {
 	log.Printf("Me: %s", message)
 }
 
-func writeChatHistory() {
+func broadcastMessages() {
 	for {
 		select {
-		case message := <-storing:
+		case message := <-broadcast:
 			chatHistory = append(chatHistory, message)
+			for _, client := range clients {
+				client.outgoing <- message
+			}
 		}
 	}
 }
