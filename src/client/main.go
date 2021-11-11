@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"scale-chat/chat"
 	"time"
 )
 
@@ -54,24 +55,40 @@ func main() {
 // The method handles incoming ws messages
 func receiveHandler(wsConnection *websocket.Conn) {
 	for {
-		_, msg, err := wsConnection.ReadMessage()
+		_, data, err := wsConnection.ReadMessage()
 		if err != nil {
 			log.Println("Error while receiving message:", err)
 			return
 		}
-		log.Printf("Received Message: %s", msg)
+
+		message, err := chat.ParseMessage(data)
+		if err != nil {
+			continue
+		}
+
+		log.Printf("%v", message)
 	}
 }
 
 func sendHandler(wsConnection *websocket.Conn) {
 	for {
-		message := "Hello?"
-		err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
+		message := chat.Message{
+			Text:   "Hello",
+			Sender: "Max",
+			SentAt: time.Now(),
+		}
+
+		data, err := message.ToJSON()
+		if err != nil {
+			continue
+		}
+
+		err = wsConnection.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
 			log.Println("Error while sending message:", err)
 			return
 		}
-		log.Printf("Me: %s", message)
+		//log.Printf("Me: %s", message)
 		time.Sleep(time.Second)
 	}
 }
