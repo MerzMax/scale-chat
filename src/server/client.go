@@ -50,7 +50,7 @@ func (client *Client) HandleIncoming(storing chan *chat.Message) {
 		_, data, err := client.wsConn.ReadMessage()
 		if err != nil {
 			log.Println("Error during reading message:", err)
-			continue
+			break
 		}
 
 		log.Printf("Received raw message: %s", data)

@@ -32,7 +32,6 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		log.Print("Error during connection upgradation:", err)
 		return
 	}
-	defer wsConn.Close()
 
 	outgoing := make(chan *chat.Message) // TODO: Add buffer?
 	client := Client{wsConn: wsConn, outgoing: outgoing}
