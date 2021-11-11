@@ -4,11 +4,18 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"scale-chat/chat"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
+var chatHistory = make([]*chat.Message, 0)
+var clients = make([]*Client, 0)
+
+var storing = make(chan *chat.Message)
 
 func main() {
+	go writeChatHistory()
+
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/ws", wsHandler)
 	err := http.ListenAndServe(":8080", nil)
@@ -20,25 +27,19 @@ func main() {
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	// Upgrade the http connection to ws
-	wsConnection, err := upgrader.Upgrade(writer, req, nil)
+	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
 		log.Print("Error during connection upgradation:", err)
 		return
 	}
-	defer wsConnection.Close()
+	defer wsConn.Close()
 
-	// Listening for incoming messages
-	for {
-		_, message, err := wsConnection.ReadMessage()
-		if err != nil {
-			log.Println("Error during reading message:", err)
-			break
-		}
+	outgoing := make(chan *chat.Message) // TODO: Add buffer?
+	client := Client{wsConn: wsConn, outgoing: outgoing}
+	clients = append(clients, &client)
 
-		log.Printf("Received Message: %s", message)
-
-
-	}
+	go client.HandleOutgoing()
+	go client.HandleIncoming(storing)
 }
 
 // Event handler for the /hello endpoint
@@ -48,11 +49,20 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 }
 
 // Method sends a message to the connected client
-func replyMessage(wsConnection *websocket.Conn) {
+func replyMessage(wsConn *websocket.Conn) {
 	message := "Hello you! :)"
-	err := wsConnection.WriteMessage(websocket.TextMessage, []byte(message))
+	err := wsConn.WriteMessage(websocket.TextMessage, []byte(message))
 	if err != nil {
 		log.Println("Error during sending message:", err)
 	}
-	log.Printf("Me: %s",  message)
+	log.Printf("Me: %s", message)
+}
+
+func writeChatHistory() {
+	for {
+		select {
+		case message := <-storing:
+			chatHistory = append(chatHistory, message)
+		}
+	}
 }

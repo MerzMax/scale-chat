@@ -1,2 +1,4 @@
 .DS_Store
 .idea/
+src/server/server
+src/client/client
