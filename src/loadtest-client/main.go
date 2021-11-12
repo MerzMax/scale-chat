@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -8,6 +9,13 @@ import (
 )
 
 func main() {
+	// Read cmd line arguments
+	loadtest := flag.Bool("loadtest", false, "true if the client should be started in the " +
+		"loadtest mode")
+	serverUrl := flag.String("server-url", "ws://localhost:8080/ws", "The url of the server to " +
+		"connect to")
+	flag.Parse()
+
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
@@ -16,8 +24,9 @@ func main() {
 
 	go func() {
 		client := client.Client{
-			ServerUrl:    "ws://localhost:8080/ws",
-			CloseConnection: closeConnection,
+			ServerUrl:        *serverUrl,
+			CloseConnection:  closeConnection,
+			IsLoadtestClient: *loadtest,
 		}
 
 		err := client.Start()
@@ -30,8 +39,8 @@ func main() {
 		select {
 		case <-sysInterrupt:
 			closeConnection <- "Closing connection due to system interrupt."
+			close(closeConnection)
 		}
-
 	}
 }
 

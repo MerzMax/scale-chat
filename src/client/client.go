@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"scale-chat/chat"
@@ -8,11 +9,23 @@ import (
 )
 
 type Client struct {
-	ServerUrl       string
-	CloseConnection chan string
+	ServerUrl		 	string
+	CloseConnection  	chan string
+	IsLoadtestClient	bool
+	wsConnection 	 	websocket.Conn
+	id           	 	string
 }
 
 func (client *Client) Start() error{
+	if !client.IsLoadtestClient {
+		log.Printf("Client started in loadtest mode. Please input your id: ")
+		_, err := fmt.Scanln(&client.id)
+		if err != nil || len(client.id) < 1 {
+			log.Printf("Failed to read the name input. Using default id: MuM")
+			client.id = "MuM"
+		}
+	}
+
 	// Connection Establishment
 	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl, nil)
 	if err != nil {
@@ -20,11 +33,13 @@ func (client *Client) Start() error{
 	}
 	defer wsConnection.Close()
 
+	client.wsConnection = *wsConnection
+
 	// Start Goroutine that listens on incoming messages
-	go receiveHandler(wsConnection)
+	go receiveHandler(client)
 
 	// Start Goroutine that sends a message every second
-	go sendHandler(wsConnection)
+	go sendHandler(client)
 
 	for {
 		select {
@@ -50,9 +65,9 @@ func (client *Client) Start() error{
 }
 
 // Handles incoming ws messages
-func receiveHandler(wsConnection *websocket.Conn) {
+func receiveHandler(client *Client) {
 	for {
-		_, data, err := wsConnection.ReadMessage()
+		_, data, err := client.wsConnection.ReadMessage()
 		if err != nil {
 			log.Println("Error while receiving message:", err)
 			return
@@ -68,11 +83,24 @@ func receiveHandler(wsConnection *websocket.Conn) {
 }
 
 // Handles outgoing ws messages
-func sendHandler(wsConnection *websocket.Conn) {
+func sendHandler(client *Client) {
 	for {
+
+		var text string
+		if client.IsLoadtestClient {
+			time.Sleep(time.Second)
+			text = "This is a message"
+		} else {
+			_, err := fmt.Scanln(&text)
+			if err != nil {
+				log.Printf("Failed to read the input. Try again...")
+				continue
+			}
+		}
+
 		message := chat.Message{
-			Text:   "Hello",
-			Sender: "Max",
+			Text:   text,
+			Sender: client.id,
 			SentAt: time.Now(),
 		}
 
@@ -81,12 +109,10 @@ func sendHandler(wsConnection *websocket.Conn) {
 			continue
 		}
 
-		err = wsConnection.WriteMessage(websocket.TextMessage, data)
+		err = client.wsConnection.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
 			log.Println("Error while sending message:", err)
 			return
 		}
-		//log.Printf("Me: %s", message)
-		time.Sleep(time.Second)
 	}
 }
