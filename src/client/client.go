@@ -1,19 +1,19 @@
-package main
+package client
 
 import (
 	"github.com/gorilla/websocket"
 	"log"
 	"os"
-	"os/signal"
 	"scale-chat/chat"
 	"time"
 )
 
-func main() {
-	// Listen to system interrupts -> program will be stopped
-	sysInterrupt := make(chan os.Signal, 1)
-	signal.Notify(sysInterrupt, os.Interrupt)
+type Client struct {
+	ServerUrl    string
+	SysInterrupt chan os.Signal
+}
 
+func (client *Client) Start() error{
 	// Connection Establishment
 	serverUrl := "ws://localhost:8080" + "/ws"
 	wsConnection, _, err := websocket.DefaultDialer.Dial(serverUrl, nil)
@@ -31,7 +31,7 @@ func main() {
 	for {
 		select {
 		// Listening for system interrupt
-		case <-sysInterrupt:
+		case <-client.SysInterrupt:
 			log.Println("System interrupt")
 
 			// Closing the connection gracefully
@@ -40,14 +40,14 @@ func main() {
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
 				log.Println("Error while closing the ws connection: ", err)
-				return
+				return err
 			}
 
 			// Timeout for connection close
 			select {
 			case <-time.After(time.Second):
 			}
-			return
+			return nil
 		}
 	}
 }

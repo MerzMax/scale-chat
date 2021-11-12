@@ -47,7 +47,7 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 	writer.Write([]byte("Hello World!"))
 }
 
-// Method sends a message to the connected client
+// Method sends a message to the connected loadtest-client
 func replyMessage(wsConn *websocket.Conn) {
 	message := "Hello you! :)"
 	err := wsConn.WriteMessage(websocket.TextMessage, []byte(message))
