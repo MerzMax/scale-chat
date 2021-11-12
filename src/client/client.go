@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/google/uuid"
 	"log"
 	"scale-chat/chat"
 	"strings"
@@ -20,7 +21,9 @@ type Client struct {
 }
 
 func (client *Client) Start() error{
-	if !client.IsLoadtestClient {
+	if client.IsLoadtestClient{
+		client.id = uuid.New().String()
+	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
 		_, err := fmt.Scanln(&client.id)
 		if err != nil || len(client.id) < 1 {
