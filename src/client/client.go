@@ -5,15 +5,18 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"scale-chat/chat"
+	"strings"
 	"time"
 )
 
 type Client struct {
-	ServerUrl		 	string
-	CloseConnection  	chan string
-	IsLoadtestClient	bool
 	wsConnection 	 	websocket.Conn
 	id           	 	string
+	CloseConnection  	chan string
+	ServerUrl		 	string
+	IsLoadtestClient	bool
+	MsgSize			int
+	MsgFrequency	int
 }
 
 func (client *Client) Start() error{
@@ -88,8 +91,10 @@ func sendHandler(client *Client) {
 
 		var text string
 		if client.IsLoadtestClient {
-			time.Sleep(time.Second)
-			text = "This is a message"
+			time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
+			// The string "a" is exactly one byte. When we want to send a message with a specific byte size we can
+			// repeat the string to reach the message size we want to have-
+			text = strings.Repeat("a", client.MsgSize)
 		} else {
 			_, err := fmt.Scanln(&text)
 			if err != nil {
