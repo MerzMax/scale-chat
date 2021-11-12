@@ -3,20 +3,18 @@ package client
 import (
 	"github.com/gorilla/websocket"
 	"log"
-	"os"
 	"scale-chat/chat"
 	"time"
 )
 
 type Client struct {
-	ServerUrl    string
-	SysInterrupt chan os.Signal
+	ServerUrl       string
+	CloseConnection chan string
 }
 
 func (client *Client) Start() error{
 	// Connection Establishment
-	serverUrl := "ws://localhost:8080" + "/ws"
-	wsConnection, _, err := websocket.DefaultDialer.Dial(serverUrl, nil)
+	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl, nil)
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
 	}
@@ -30,9 +28,8 @@ func (client *Client) Start() error{
 
 	for {
 		select {
-		// Listening for system interrupt
-		case <-client.SysInterrupt:
-			log.Println("System interrupt")
+		case s := <-client.CloseConnection:
+			log.Printf("Closing connection... Reason: %s", s)
 
 			// Closing the connection gracefully
 			err := wsConnection.WriteMessage(
@@ -52,7 +49,7 @@ func (client *Client) Start() error{
 	}
 }
 
-// The method handles incoming ws messages
+// Handles incoming ws messages
 func receiveHandler(wsConnection *websocket.Conn) {
 	for {
 		_, data, err := wsConnection.ReadMessage()
@@ -70,6 +67,7 @@ func receiveHandler(wsConnection *websocket.Conn) {
 	}
 }
 
+// Handles outgoing ws messages
 func sendHandler(wsConnection *websocket.Conn) {
 	for {
 		message := chat.Message{
