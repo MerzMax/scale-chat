@@ -2,8 +2,8 @@ package client
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"log"
 	"scale-chat/chat"
 	"strings"

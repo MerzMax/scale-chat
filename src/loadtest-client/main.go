@@ -18,35 +18,58 @@ func main() {
 		"for loadtest mode")
 	msgSize := flag.Int("msg-size", 256, "The size of the messages in bytes (just for loadtest " +
 		"mode)")
+	numOfClients := flag.Int("clients", 1, "Number of clients that will be started (just for " +
+		"loadtest mode")
 	flag.Parse()
 
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
 
-	closeConnection := make(chan string, 1)
+	clientsCloseConnection := make([]chan string, 0)
 
-	go func() {
-		client := client.Client{
-			ServerUrl:        	*serverUrl,
-			CloseConnection:  	closeConnection,
-			IsLoadtestClient: 	*loadtest,
-			MsgFrequency: 		*msgFrequency,
-			MsgSize: 			*msgSize,
-		}
+	// If the application isn't started in loadtest mode there is just one client that will be started.
+	if !*loadtest {
+		*numOfClients = 1
+	}
 
-		err := client.Start()
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-	}()
+	// Create numOfClients clients that can chat
+	for i := 0; i < *numOfClients; i++ {
+
+		log.Printf("Creating client number: %v / %v", i + 1, numOfClients)
+
+		closeConnection := make(chan string, 1)
+		clientsCloseConnection = append(clientsCloseConnection, closeConnection)
+
+		go func() {
+			client := client.Client{
+				ServerUrl:        	*serverUrl,
+				CloseConnection:  	closeConnection,
+				IsLoadtestClient: 	*loadtest,
+				MsgFrequency: 		*msgFrequency,
+				MsgSize: 			*msgSize,
+			}
+
+			err := client.Start()
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
+		}()
+
+	}
 
 	for {
 		select {
 		case <-sysInterrupt:
-			closeConnection <- "Closing connection due to system interrupt."
-			close(closeConnection)
+			for _, closeConnection := range clientsCloseConnection {
+				closeConnection <- "Closing connection due to system interrupt."
+				close(closeConnection)
+			}
 		}
 	}
+}
+
+func startClient(closeConnection chan string){
+
 }
 
