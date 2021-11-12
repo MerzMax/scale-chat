@@ -12,14 +12,26 @@ func main() {
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
 
-	client := client.Client{
-		ServerUrl:    "ws://localhost:8080/ws",
-		SysInterrupt: sysInterrupt,
-	}
+	closeConnection := make(chan string, 1)
 
-	err := client.Start()
-	if err != nil {
-		log.Fatalf("%v", err)
+	go func() {
+		client := client.Client{
+			ServerUrl:    "ws://localhost:8080/ws",
+			CloseConnection: closeConnection,
+		}
+
+		err := client.Start()
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	}()
+
+	for {
+		select {
+		case <-sysInterrupt:
+			closeConnection <- "Closing connection due to system interrupt."
+		}
+
 	}
 }
 
