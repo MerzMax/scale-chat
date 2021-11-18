@@ -31,8 +31,9 @@
                     }
 
                     socket.onmessage = function(event) {
-                        var messages = document.getElementById("messages")
+                        var messageList = document.getElementById("messageList")
                         var newMessage = document.createElement("div")
+                        newMessage.classList.add('message')
 
                         var data = JSON.parse(event.data)
                         
@@ -55,7 +56,7 @@
                         textElement.appendChild(textValue)
                         newMessage.appendChild(textElement)
 
-                        messages.appendChild(newMessage)
+                        messageList.appendChild(newMessage)
                     }
                     
                     // SENDING MESSAGES
@@ -99,34 +100,52 @@
             }
 
             function displayStatusMessage(message) {
-                var messages = document.getElementById("messages")
+                var messageList = document.getElementById("messageList")
 
                 var newMessage = document.createElement("div")
+                newMessage.classList.add('statusMessage')
                 msg = document.createTextNode(message)
                 newMessage.appendChild(msg)
 
-                messages.appendChild(newMessage)
+                messageList.appendChild(newMessage)
             }
 
         </script>
         <style>
+            #app{
+                margin: 15px;
+            }
 
+            .message{
+
+            }
+            .statusMessage{
+
+            }
         </style>
 
     </head>
     <body>
 
-        <div id="messages">
-            
+        <div id="app">
+
+            <div id="topbar">
+                <div>Scale-Chat</div>
+            </div>
+
+            <div id="messageList">
+            </div>
+    
+            <form id="inputArea">
+                <label for="userIdInput">User Id:</label>
+                <input id="userIdInput" type="text" autofocus/>
+                <label for="messageInput">Message:</label>
+                <input id="messageInput" type="text"/>
+                <input type="submit" value="Send"> 
+            </form>
         </div>
 
-        <form id="inputArea">
-            <label for="userIdInput">User Id:</label>
-            <input id="userIdInput" type="text" autofocus/>
-            <label for="messageInput">Message:</label>
-            <input id="messageInput" type="text"/>
-            <input type="submit" value="Send"> 
-        </form>
+        
 
     </body>
 </html>
