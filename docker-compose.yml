@@ -7,3 +7,24 @@ services:
       dockerfile: src/server/Dockerfile
     ports:
       - "8080:8080"
+
+  prometheus:
+    image: prom/prometheus:v2.31
+    networks:
+      - default
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:8.2
+    environment:
+      PROMETHEUS_HOST: http://prometheus:8081
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+
+volumes:
+  prometheus-data: { }
