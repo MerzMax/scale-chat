@@ -57,16 +57,6 @@ func demoHandler(writer http.ResponseWriter, req *http.Request) {
 	http.ServeFile(writer, req, "./demo.html")
 }
 
-// Method sends a message to the connected loadtest-client
-func replyMessage(wsConn *websocket.Conn) {
-	message := "Hello you! :)"
-	err := wsConn.WriteMessage(websocket.TextMessage, []byte(message))
-	if err != nil {
-		log.Println("Error during sending message:", err)
-	}
-	log.Printf("Me: %s", message)
-}
-
 func broadcastMessages() {
 	for {
 		select {
