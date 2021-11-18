@@ -1,14 +1,17 @@
 package client
 
 import (
-	"fmt"
+	"bufio"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
+	"os"
 	"scale-chat/chat"
 	"strings"
 	"time"
 )
+
+var consoleReader = bufio.NewReader(os.Stdin)
 
 type Client struct {
 	wsConnection 	 	websocket.Conn
@@ -25,7 +28,9 @@ func (client *Client) Start() error{
 		client.id = uuid.New().String()
 	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
-		_, err := fmt.Scanln(&client.id)
+		input, err := consoleReader.ReadString('\n')
+		// convert CRLF to LF
+		client.id= strings.Replace(input, "\n", "", -1)
 		if err != nil || len(client.id) < 1 {
 			log.Printf("Failed to read the name input. Using default id: MuM")
 			client.id = "MuM"
@@ -91,7 +96,6 @@ func receiveHandler(client *Client) {
 // Handles outgoing ws messages
 func sendHandler(client *Client) {
 	for {
-
 		var text string
 		if client.IsLoadtestClient {
 			time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
@@ -99,7 +103,10 @@ func sendHandler(client *Client) {
 			// repeat the string to reach the message size we want to have-
 			text = strings.Repeat("a", client.MsgSize)
 		} else {
-			_, err := fmt.Scanln(&text)
+			log.Printf("Please imput the message you want to send:")
+			input, err := consoleReader.ReadString('\n')
+			// convert CRLF to LF
+			text = strings.Replace(input, "\n", "", -1)
 			if err != nil {
 				log.Printf("Failed to read the input. Try again...")
 				continue

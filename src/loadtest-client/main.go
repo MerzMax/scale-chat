@@ -36,7 +36,7 @@ func main() {
 	// Create numOfClients clients that can chat
 	for i := 0; i < *numOfClients; i++ {
 
-		log.Printf("Creating client number: %v / %v", i + 1, numOfClients)
+		log.Printf("Creating client number: %v / %v", i + 1, *numOfClients)
 
 		closeConnection := make(chan string, 1)
 		clientsCloseConnection = append(clientsCloseConnection, closeConnection)
@@ -67,9 +67,5 @@ func main() {
 			}
 		}
 	}
-}
-
-func startClient(closeConnection chan string){
-
 }
 
