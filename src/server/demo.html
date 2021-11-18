@@ -76,7 +76,17 @@
                             sent_at: now.toISOString()
                         }
 
+                        // Sending Message
                         socket.send(JSON.stringify(message));
+                        
+                        // Lock the user id value and remove focus
+                        userIdInput.readOnly = true
+                        userIdInput.blur()
+
+                        // Reset message input and focus element
+                        messageInput.value = ""
+                        messageInput.focus()
+
                         return false;
                     };
                 }
@@ -97,7 +107,7 @@
 
         <form id="inputArea">
             <label for="userIdInput">User Id:</label>
-            <input id="userIdInput" type="text"/>
+            <input id="userIdInput" type="text" autofocus/>
             <label for="messageInput">Message:</label>
             <input id="messageInput" type="text"/>
             <input type="submit" value="Send"> 
