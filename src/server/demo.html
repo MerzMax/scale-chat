@@ -1,41 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Scale-Chat</title>
-<script>
-    let socket = new WebSocket("ws://127.0.0.1:8080/ws");
+    <head>
+        <title>Scale-Chat</title>
+        <script>
 
-    socket.onopen = function(event) {
-        console.log("Connection established!")
-    }
+            window.onload = function () {
 
-    socket.onclose = function(event) {
-        if (event.wasClean) {
-            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-        } else {
-            // e.g. server process killed or network down
-            console.log('[close] Connection died');
-        }
-    }
+                if (!("WebSocket" in window)) {
+                    alert("WebSocket NOT supported by your Browser!");
+                }
+                else {
+                    let socket = new WebSocket("ws://127.0.0.1:8080/ws");
 
-    socket.onerror = function(error) {
-        console.log(`Error: ${error.message}`);
-    }
+                    // RECEIVING MESSAGES
 
-    socket.onmessage = function(event) {
-        console.log(`Mwg: ${event.data}`)
-    }
+                    socket.onopen = function(event) {
+                        console.log("Connection established!")
+                    }
 
-</script>
-<style>
+                    socket.onclose = function(event) {
+                        if (event.wasClean) {
+                            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                        } else {
+                            // e.g. server process killed or network down
+                            console.log('[close] Connection died');
+                        }
+                    }
 
-</style>
+                    socket.onerror = function(error) {
+                        console.log(`Error: ${error.message}`);
+                    }
 
-</head>
+                    socket.onmessage = function(event) {
+                        var messages = document.getElementById("messages")
+                        var newMessage = document.createElement("div")
 
+                        var data = JSON.parse(event.data)
+                        console.log(data)
+                        
+                        // TS
+                        var date = new Date(data.sent_at)
+                        var sentAtElement = document.createTextNode(date.getHours() + ":" + date.getMinutes())
+                        newMessage.appendChild(sentAtElement)
 
-<body>
+                        // Sender
+                        var senderElement = document.createTextNode(data.sender)
+                        newMessage.appendChild(senderElement)
 
+                        // Message
+                        var textElement = document.createTextNode(data.text)
+                        newMessage.appendChild(textElement)
 
-</body>
+                        messages.appendChild(newMessage)
+                    }
+                    
+                    // SENDING MESSAGES
+                    document.getElementById("inputArea").onsubmit = function () {
+                        console.log("Send button pressed.")
+                        if (!socket) {
+                            alert("No WebSocket connection established. Reload to retry");
+                            return false;
+                            // TODO Error Message
+                        }
+                        if (!messageInput.value || !userIdInput.value) {
+                            console.log("Missing values in input fields")
+                            // TODO Mark input fields
+                            return false;
+                        }
+
+                        var now =  new Date(Date.now())
+
+                        var message = {
+                            text: messageInput.value,
+                            sender: userIdInput.value,
+                            sent_at: now.toISOString()
+                        }
+
+                        socket.send(JSON.stringify(message));
+                        return false;
+                    };
+                }
+                
+            }
+            
+        </script>
+        <style>
+
+        </style>
+
+    </head>
+    <body>
+
+        <div id="messages">
+            
+        </div>
+
+        <form id="inputArea">
+            <label for="userIdInput">User Id:</label>
+            <input id="userIdInput" type="text"/>
+            <label for="messageInput">Message:</label>
+            <input id="messageInput" type="text"/>
+            <input type="submit" value="Send"> 
+        </form>
+
+    </body>
 </html>
