@@ -2,150 +2,204 @@
 <html lang="en">
     <head>
         <title>Scale-Chat</title>
+        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
         <script>
 
             window.onload = function () {
 
                 if (!("WebSocket" in window)) {
                     alert("WebSocket NOT supported by your Browser!");
-                }
-                else {
-                    let socket = new WebSocket("ws://127.0.0.1:8080/ws");
-
-                    // RECEIVING MESSAGES
-
-                    socket.onopen = function(event) {
-                        displayStatusMessage("Connection established!")
-                    }
-
-                    socket.onclose = function(event) {
-                        if (event.wasClean) {
-                            displayStatusMessage(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
-                        } else {
-                            displayStatusMessage("[close] Connection died (e.g. server process killed or network down)")
-                        }
-                    }
-
-                    socket.onerror = function(error) {
-                        console.log(`Error: ${error.message}`);
-                    }
-
-                    socket.onmessage = function(event) {
-                        var messageList = document.getElementById("messageList")
-                        var newMessage = document.createElement("div")
-                        newMessage.classList.add('message')
-
-                        var data = JSON.parse(event.data)
-                        
-                        // Timestamp
-                        var date = new Date(data.sent_at)
-                        var sentAtValue = document.createTextNode(date.getHours() + ":" + date.getMinutes())
-                        var sentAtElement = document.createElement("div")
-                        sentAtElement.appendChild(sentAtValue)
-                        newMessage.appendChild(sentAtElement)
-
-                        // Sender
-                        var senderValue = document.createTextNode(data.sender)
-                        var senderElement = document.createElement("div")
-                        senderElement.appendChild(senderValue)
-                        newMessage.appendChild(senderElement)
-
-                        // Message
-                        var textValue = document.createTextNode(data.text)
-                        var textElement = document.createElement("div")
-                        textElement.appendChild(textValue)
-                        newMessage.appendChild(textElement)
-
-                        messageList.appendChild(newMessage)
-                    }
-                    
-                    // SENDING MESSAGES
-                    document.getElementById("inputArea").onsubmit = function () {
-                        if (!socket) {
-                            displayStatusMessage("No WebSocket connection established. Reload to retry");
-                            return false;
-                        }
-                        else if (!userIdInput.value) {
-                            displayStatusMessage("Please input a user id.")
-                            return false;
-                        } 
-                        else if(!messageInput.value) {
-                            displayStatusMessage("Please input a message.")
-                            return false;
-                        }
-
-                        var now =  new Date(Date.now())
-
-                        var message = {
-                            text: messageInput.value,
-                            sender: userIdInput.value,
-                            sent_at: now.toISOString()
-                        }
-
-                        // Sending Message
-                        socket.send(JSON.stringify(message));
-                        
-                        // Lock the user id value and remove focus
-                        userIdInput.readOnly = true
-                        userIdInput.blur()
-
-                        // Reset message input and focus element
-                        messageInput.value = ""
-                        messageInput.focus()
-
-                        return false;
-                    };
+                    return;
                 }
                 
+                let socket = new WebSocket("ws://" + document.location.host + "/ws");
+
+                // RECEIVING MESSAGES
+                socket.onopen = function(event) {
+                    displayStatusMessage("Connection established!", true)
+                }
+
+                socket.onclose = function(event) {
+                    if (event.wasClean) {
+                        displayStatusMessage(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`, false)
+                    } else {
+                        displayStatusMessage("[close] Connection died (e.g. server process killed or network down)", false)
+                    }
+                }
+
+                socket.onerror = function(error) {
+                    console.log(`Error: ${error.message}`);
+                }
+
+                socket.onmessage = function(event) {
+                    var data = JSON.parse(event.data)
+
+                    // Filter all messages that were sent by the user itself
+                    if(data.sender != document.getElementById("userIdInput").value) {
+                        displayIncommingChatMessage(data)
+                    }
+                    
+                }
+                
+                // SENDING MESSAGES
+                document.getElementById("inputArea").onsubmit = function () {
+                    if (!socket) {
+                        displayStatusMessage("No WebSocket connection established. Reload to retry.", false);
+                        return false;
+                    }
+
+                    if (!userIdInput.value) {
+                        displayStatusMessage("Please input a user id.", false)
+                        return false;
+                    } 
+
+                    if(!messageInput.value) {
+                        displayStatusMessage("Please input a message.", false)
+                        return false;
+                    }
+
+                    var now =  new Date(Date.now())
+
+                    var message = {
+                        text: messageInput.value,
+                        sender: userIdInput.value,
+                        sent_at: now.toISOString()
+                    }
+
+                    // Sending Message
+                    socket.send(JSON.stringify(message));
+                    
+                    // Lock the user id value and remove focus
+                    userIdInput.readOnly = true
+                    userIdInput.blur()
+
+                    // Reset message input and focus element
+                    messageInput.value = ""
+                    messageInput.focus()
+
+                    return false;
+                };
             }
 
-            function displayStatusMessage(message) {
+            function displayStatusMessage(message, success) {
                 var messageList = document.getElementById("messageList")
 
+                var newMessageWrapper = document.createElement("div")
                 var newMessage = document.createElement("div")
-                newMessage.classList.add('statusMessage')
                 msg = document.createTextNode(message)
+                newMessageWrapper.appendChild(newMessage)
                 newMessage.appendChild(msg)
+
+                if (success) {
+                    newMessage.classList.add('bg-green-400')
+                }
+                else {
+                    newMessage.classList.add('bg-red-400')
+                } 
+
+                addBasicMessageStyling(newMessageWrapper, newMessage)
+
+                messageList.appendChild(newMessageWrapper)
+            }
+            
+            function displayIncommingChatMessage(data){
+                var messageList = document.getElementById("messageList")
+                
+                var newMessageWrapper = document.createElement("div")
+                var newMessage = document.createElement("div")
+                newMessageWrapper.appendChild(newMessage)
+                
+                var newMessageHeader = document.createElement("div")
+
+                // Timestamp
+                var date = new Date(data.sent_at)
+                var sentAtValue = document.createTextNode(date.getHours() + ":" + date.getMinutes())
+                var sentAtElement = document.createElement("div")
+                sentAtElement.appendChild(sentAtValue)
+                newMessage.appendChild(sentAtElement)
+                
+                sentAtElement.classList.add('pr-1')
+
+                // Sender
+                var senderValue = document.createTextNode(data.sender)
+                var senderElement = document.createElement("div")
+                senderElement.appendChild(senderValue)
+                newMessage.appendChild(senderElement)
+
+                senderElement.classList.add('pr-1')
+
+
+                // Add Header
+                newMessage.appendChild(newMessageHeader)
+                // TODO: Create Header that includes TS and ClientID
+
+                // Message
+                var textValue = document.createTextNode(data.text)
+                var textElement = document.createElement("div")
+                textElement.appendChild(textValue)
+                newMessage.appendChild(textElement)
+
+                addBasicMessageStyling(newMessageWrapper, newMessage)
+
+                newMessage.classList.add('bg-blue-200')
+
+                messageList.appendChild(newMessageWrapper)
+            }
+
+            function displayOutgoingChatMessage(data){
+                var messageList = document.getElementById("messageList")
+                var newMessage = document.createElement("div")
+                
+                // Timestamp
+                var date = new Date(data.sent_at)
+                var sentAtValue = document.createTextNode(date.getHours() + ":" + date.getMinutes())
+                var sentAtElement = document.createElement("div")
+                sentAtElement.appendChild(sentAtValue)
+                newMessage.appendChild(sentAtElement)
+
+                // Message
+                var textValue = document.createTextNode(data.text)
+                var textElement = document.createElement("div")
+                textElement.appendChild(textValue)
+                newMessage.appendChild(textElement)
+
+                addBasicMessageStyling(newMessa)
 
                 messageList.appendChild(newMessage)
             }
 
+            function addBasicMessageStyling(messageWrapper, message) {
+                messageWrapper.classList.add('flex')
+                messageWrapper.classList.add('mb-1')
+                message.classList.add('flex-initial')
+                message.classList.add('max-w-2xl')
+                message.classList.add('px-3')
+                message.classList.add('py-1')
+                message.classList.add('rounded-3xl')
+            }
+
+
+
         </script>
-        <style>
-            #app{
-                margin: 15px;
-            }
-
-            .message{
-
-            }
-            .statusMessage{
-
-            }
-        </style>
-
     </head>
     <body>
 
-        <div id="app">
+        <div id="app" class="font-sans h-screen flex flex-col flex-1">
 
-            <div id="topbar">
+            <div id="topbar" class="p-5 bg-gray-200 font-bold text-6xl flex-grow-0">
                 <div>Scale-Chat</div>
             </div>
 
-            <div id="messageList">
+            <div id="messageList" class="flex-grow flex flex-col p-5 flex-wrap">
             </div>
     
-            <form id="inputArea">
-                <label for="userIdInput">User Id:</label>
-                <input id="userIdInput" type="text" autofocus/>
-                <label for="messageInput">Message:</label>
-                <input id="messageInput" type="text"/>
-                <input type="submit" value="Send"> 
+            <form id="inputArea" class="flex-grow-0 p-5 bg-gray-400">
+                <label for="userIdInput" class="pr-2">User Id:</label>
+                <input id="userIdInput" type="text" autofocus class="p-1 rounded w-32 pr-2"/>
+                <label for="messageInput" class="px-2">Message:</label>
+                <input id="messageInput" type="text" class="p-1 rounded"/>
+                <input type="submit" value="Send" class="btn px-4 py-1 rounded"> 
             </form>
         </div>
-
-        
-
     </body>
 </html>
