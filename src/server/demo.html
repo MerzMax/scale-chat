@@ -15,15 +15,14 @@
                     // RECEIVING MESSAGES
 
                     socket.onopen = function(event) {
-                        console.log("Connection established!")
+                        displayStatusMessage("Connection established!")
                     }
 
                     socket.onclose = function(event) {
                         if (event.wasClean) {
-                            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                            displayStatusMessage(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
                         } else {
-                            // e.g. server process killed or network down
-                            console.log('[close] Connection died');
+                            displayStatusMessage("[close] Connection died (e.g. server process killed or network down)")
                         }
                     }
 
@@ -36,19 +35,24 @@
                         var newMessage = document.createElement("div")
 
                         var data = JSON.parse(event.data)
-                        console.log(data)
                         
-                        // TS
+                        // Timestamp
                         var date = new Date(data.sent_at)
-                        var sentAtElement = document.createTextNode(date.getHours() + ":" + date.getMinutes())
+                        var sentAtValue = document.createTextNode(date.getHours() + ":" + date.getMinutes())
+                        var sentAtElement = document.createElement("div")
+                        sentAtElement.appendChild(sentAtValue)
                         newMessage.appendChild(sentAtElement)
 
                         // Sender
-                        var senderElement = document.createTextNode(data.sender)
+                        var senderValue = document.createTextNode(data.sender)
+                        var senderElement = document.createElement("div")
+                        senderElement.appendChild(senderValue)
                         newMessage.appendChild(senderElement)
 
                         // Message
-                        var textElement = document.createTextNode(data.text)
+                        var textValue = document.createTextNode(data.text)
+                        var textElement = document.createElement("div")
+                        textElement.appendChild(textValue)
                         newMessage.appendChild(textElement)
 
                         messages.appendChild(newMessage)
@@ -56,15 +60,16 @@
                     
                     // SENDING MESSAGES
                     document.getElementById("inputArea").onsubmit = function () {
-                        console.log("Send button pressed.")
                         if (!socket) {
-                            alert("No WebSocket connection established. Reload to retry");
+                            displayStatusMessage("No WebSocket connection established. Reload to retry");
                             return false;
-                            // TODO Error Message
                         }
-                        if (!messageInput.value || !userIdInput.value) {
-                            console.log("Missing values in input fields")
-                            // TODO Mark input fields
+                        else if (!userIdInput.value) {
+                            displayStatusMessage("Please input a user id.")
+                            return false;
+                        } 
+                        else if(!messageInput.value) {
+                            displayStatusMessage("Please input a message.")
                             return false;
                         }
 
@@ -92,7 +97,17 @@
                 }
                 
             }
-            
+
+            function displayStatusMessage(message) {
+                var messages = document.getElementById("messages")
+
+                var newMessage = document.createElement("div")
+                msg = document.createTextNode(message)
+                newMessage.appendChild(msg)
+
+                messages.appendChild(newMessage)
+            }
+
         </script>
         <style>
 
