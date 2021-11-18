@@ -14,23 +14,23 @@ import (
 var consoleReader = bufio.NewReader(os.Stdin)
 
 type Client struct {
-	wsConnection 	 	websocket.Conn
-	id           	 	string
-	CloseConnection  	chan string
-	ServerUrl		 	string
-	IsLoadtestClient	bool
-	MsgSize			int
-	MsgFrequency	int
+	wsConnection     websocket.Conn
+	id               string
+	CloseConnection  chan string
+	ServerUrl        string
+	IsLoadtestClient bool
+	MsgSize          int
+	MsgFrequency     int
 }
 
-func (client *Client) Start() error{
-	if client.IsLoadtestClient{
+func (client *Client) Start() error {
+	if client.IsLoadtestClient {
 		client.id = uuid.New().String()
 	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
 		input, err := consoleReader.ReadString('\n')
 		// convert CRLF to LF
-		client.id= strings.Replace(input, "\n", "", -1)
+		client.id = strings.Replace(input, "\n", "", -1)
 		if err != nil || len(client.id) < 1 {
 			log.Printf("Failed to read the name input. Using default id: MuM")
 			client.id = "MuM"
