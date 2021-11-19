@@ -9,7 +9,7 @@ services:
       - "8080:8080"
 
   prometheus:
-    image: prom/prometheus:v2.31
+    image: prom/prometheus:v2.31.1
     networks:
       - default
     volumes:
@@ -17,11 +17,13 @@ services:
       - prometheus-data:/prometheus
 
   grafana:
-    image: grafana/grafana:8.2
+    image: grafana/grafana:8.2.5
     environment:
-      PROMETHEUS_HOST: http://prometheus:8081
+      PROMETHEUS_HOST: http://prometheus:9090
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "3000:3000"
     volumes:
       - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
