@@ -1,8 +1,48 @@
-# scale-chat
+# Scale-Chat
 
 The Idea is to create a simple chat application and a correspoinding client that grow over time. This means that the 
 server might run in several problems regarding scale that need to be fixed. Which problems will occur we are going to 
 see if we go along.
+
+
+
+## Repository structure
+
+The projects implementation lives in the [./src](./src) folder and contains several directories: 
+
+* `chat` : Contains models that will be shared with the server and the client.
+
+* `client` : Contains the implementation of the client
+
+* `loadtest-client` : Contains the implementation of the loadtest-client that is capable of starting several client instances and running in a manual mode. Look [here](#client) for more information. 
+
+* `server` : Contains the implementation of the chat server.
+
+  
+
+The server and the client are implemented in GO with the help of [gorilla/websockets](https://github.com/gorilla/websocket).
+
+
+
+## Startup
+
+### Server
+
+The server can be stared 
+
+### Client
+
+
+
+## Loadtest Setup
+
+
+
+
+
+
+
+
 
 ## First steps:
 * Create a simple chat server that broadcastst received messages to all connected clients &rarr; will be implemented in 
@@ -55,7 +95,7 @@ Server Setup:
 
 Client Setup: 
 * To simplify the start of the clients in a reproducable environment the client could run in a docker container as well.
-    
+  
     There are several posibilities, how the clients clould be started with this approach:
     1. Start several chat clients within one process
         * 1 process = 1 docker contianer
