@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"scale-chat/chat"
@@ -21,10 +22,27 @@ var broadcast = make(chan *chat.Message)
 func main() {
 	go broadcastMessages()
 
-	http.HandleFunc("/ws", wsHandler)
-	http.HandleFunc("/", demoHandler)
+	// Register separate ServeMux instances for public endpoints and internal metrics
+	publicMux := http.NewServeMux()
+	internalMux := http.NewServeMux()
 
-	err := http.ListenAndServe(":8080", nil)
+	// Register public endpoints
+	publicMux.HandleFunc("/hello", demoHandler)
+	publicMux.HandleFunc("/ws", wsHandler)
+
+	// Register Prometheus endpoint
+	internalMux.Handle("/metrics", promhttp.Handler())
+
+	// Listen on internal metrics port
+	go func() {
+		err := http.ListenAndServe(":8081", internalMux)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// Listen on public endpoint port
+	err := http.ListenAndServe(":8080", publicMux)
 	if err != nil {
 		log.Fatal(err)
 	}
