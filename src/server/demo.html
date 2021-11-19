@@ -7,6 +7,8 @@
 
             window.onload = function () {
 
+                resetInputFields()
+
                 if (!("WebSocket" in window)) {
                     alert("WebSocket NOT supported by your Browser!");
                     return;
@@ -105,7 +107,7 @@
                 messageList.appendChild(newMessageWrapper)
             }
 
-            function displayIncommingChatMessage(data){
+            function displayIncommingChatMessage(data) {
                 var messageList = document.getElementById("messageList")                
                 var newMessageWrapper = document.createElement("div")
                 var newMessage = createMessageElement(data)
@@ -117,7 +119,7 @@
                 messageList.appendChild(newMessageWrapper)
             }
 
-            function displayOutgoingChatMessage(data){
+            function displayOutgoingChatMessage(data) {
                 var messageList = document.getElementById("messageList")                
                 var newMessageWrapper = document.createElement("div")
                 var newMessage = createMessageElement(data)
@@ -183,7 +185,10 @@
                 message.classList.add('rounded-3xl')
             }
 
-
+            function resetInputFields() {
+                document.getElementById("userIdInput").value = ""
+                document.getElementById("messageInput").value = ""
+            }
 
         </script>
     </head>
