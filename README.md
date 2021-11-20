@@ -1,27 +1,33 @@
 # Scale-Chat
 
-The Idea is to create a simple chat application and a correspoinding client that grow over time. This means that the 
-server might run in several problems regarding scale that need to be fixed. Which problems will occur we are going to 
-see if we go along.
+The Idea is to create a simple chat application and a correspoinding client that grow over time. This means that there 
+will be more and more clients so that the server might run in several problems regarding scale that need to be fixed. 
+Which exact problems will occur, we are going to see if we go along.
 
+## Features
 
+TODO
 
 ## Repository structure
 
+### Documentation
+TODO
+
+
+### Implementation 
 The projects implementation lives in the [./src](./src) folder and contains several directories: 
 
 * `chat` : Contains models that will be shared with the server and the client.
 
 * `client` : Contains the implementation of the client
 
-* `loadtest-client` : Contains the implementation of the loadtest-client that is capable of starting several client instances and running in a manual mode. Look [here](#client) for more information. 
+* `loadtest-client` : Contains the implementation of the loadtest-client that is capable of starting several client 
+instances and running in a manual mode. Look [here](#client) for more information. 
 
 * `server` : Contains the implementation of the chat server.
 
-  
-
-The server and the client are implemented in GO with the help of [gorilla/websockets](https://github.com/gorilla/websocket).
-
+The server and the client are implemented in GO with the help of 
+[gorilla/websockets](https://github.com/gorilla/websocket).
 
 
 ## Startup
@@ -34,9 +40,11 @@ The server can be stared by executing the following command in the `./src/server
 $ go run .
 ```
 
-Besides this there is a Dockerfile at `./src/server` that can be used to start the server as well. Be aware of that the context of the docker build should be the project's root directory. 
+Besides this there is a Dockerfile at `./src/server` that can be used to start the server as well. Be aware of that the 
+context of the docker build should be the project's root directory. 
 
-In order to start the server more easily and with a more consistent configuration use the `docker-compose.yaml` configuration that is located in the project's root directory. Start the server by executing: 
+In order to start the server more easily and with a more consistent configuration use the `docker-compose.yaml` 
+configuration that is located in the project's root directory. Start the server by executing: 
 
 ```bash
 $ docker-compose up
@@ -46,11 +54,13 @@ $ docker-compose up
 
 #### Web / demo client
 
-There is a webbased client available on [http://localhost:8080](http://localhost:8080) that can be used for demo purposes.
+There is a webbased client available on [http://localhost:8080](http://localhost:8080) that can be used for demo 
+purposes.
 
 #### Loadtest client
 
-To execute the loadtests we implemented a go loadtest client that is capable starting several clients that send messages to the server automatically. To configure the loadtest client, just use the following flags on startup:
+To execute the loadtests we implemented a go loadtest client that is capable starting several clients that send 
+messages to the server automatically. To configure the loadtest client, just use the following flags on startup:
 
 ```bash
 $ ./loadtest-client --help
@@ -67,25 +77,29 @@ Usage of ./loadtest-client:
         The url of the server to connect to (default "ws://localhost:8080/ws")
 ```
 
-
-
 The loadtest client can be stared by executing the following command in the `./src/loadtest-client` directory: 
 
 ```bash
 $ go run . --loadtest-client --clients 5 --msg-frequency 1000 --msg-size 512
 ```
 
-If you just want to start a simple commandline client that can send user input, start the loadtest-client without any flags. 
+If you just want to start a simple commandline client that can send user input, start the loadtest-client without any 
+flags:
+
+```bash
+$ go run .
+```
+
+
+## Running Loadtests
+
+TODO
 
 
 
-## Loadtest Setup
+----
 
-
-
-
-
-
+---
 
 
 
