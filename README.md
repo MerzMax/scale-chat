@@ -28,9 +28,54 @@ The server and the client are implemented in GO with the help of [gorilla/websoc
 
 ### Server
 
-The server can be stared 
+The server can be stared by executing the following command in the `./src/server` directory: 
+
+```bash
+$ go run .
+```
+
+Besides this there is a Dockerfile at `./src/server` that can be used to start the server as well. Be aware of that the context of the docker build should be the project's root directory. 
+
+In order to start the server more easily and with a more consistent configuration use the `docker-compose.yaml` configuration that is located in the project's root directory. Start the server by executing: 
+
+```bash
+$ docker-compose up
+```
 
 ### Client
+
+#### Web / demo client
+
+There is a webbased client available on [http://localhost:8080](http://localhost:8080) that can be used for demo purposes.
+
+#### Loadtest client
+
+To execute the loadtests we implemented a go loadtest client that is capable starting several clients that send messages to the server automatically. To configure the loadtest client, just use the following flags on startup:
+
+```bash
+$ ./loadtest-client --help
+Usage of ./loadtest-client:
+  -clients int
+        Number of clients that will be started (just for loadtest mode) (default 1)
+  -loadtest
+        Flag indicates weather the client should start in the loadtest mode
+  -msg-frequency int
+        The frequency of the messages in ms (just for loadtest mode) (default 1000)
+  -msg-size int
+        The size of the messages in bytes (just for loadtest mode) (default 256)
+  -server-url string
+        The url of the server to connect to (default "ws://localhost:8080/ws")
+```
+
+
+
+The loadtest client can be stared by executing the following command in the `./src/loadtest-client` directory: 
+
+```bash
+$ go run . --loadtest-client --clients 5 --msg-frequency 1000 --msg-size 512
+```
+
+If you just want to start a simple commandline client that can send user input, start the loadtest-client without any flags. 
 
 
 
