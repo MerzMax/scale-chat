@@ -15,11 +15,11 @@ func main() {
 	serverUrl := flag.String("server-url", "ws://localhost:8080/ws", "The url of the server to " +
 		"connect to")
 	msgFrequency := flag.Int("msg-frequency", 1000, "The frequency of the messages in ms (just " +
-		"for loadtest mode")
+		"for loadtest mode)")
 	msgSize := flag.Int("msg-size", 256, "The size of the messages in bytes (just for loadtest " +
 		"mode)")
 	numOfClients := flag.Int("clients", 1, "Number of clients that will be started (just for " +
-		"loadtest mode")
+		"loadtest mode)")
 	flag.Parse()
 
 	// Listen to system interrupts -> program will be stopped
