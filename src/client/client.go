@@ -16,7 +16,7 @@ var consoleReader = bufio.NewReader(os.Stdin)
 type Client struct {
 	wsConnection     websocket.Conn
 	id               string
-	CloseConnection  chan string
+	CloseConnection  chan os.Signal
 	ServerUrl        string
 	IsLoadtestClient bool
 	MsgSize          int
@@ -42,7 +42,6 @@ func (client *Client) Start() error {
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
 	}
-	defer wsConnection.Close()
 
 	client.wsConnection = *wsConnection
 
@@ -62,13 +61,14 @@ func (client *Client) Start() error {
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				log.Println("Error while closing the ws connection: ", err)
+				log.Println("Error while closing the ws connection gracefully: ", err)
 				return err
 			}
 
 			// Timeout for connection close
 			select {
 			case <-time.After(time.Second):
+				log.Println("Terminating. Timeout for connection close.")
 			}
 			return nil
 		}
@@ -95,6 +95,7 @@ func receiveHandler(client *Client) {
 
 // Handles outgoing ws messages
 func sendHandler(client *Client) {
+	defer client.wsConnection.Close()
 	for {
 		var text string
 		if client.IsLoadtestClient {
