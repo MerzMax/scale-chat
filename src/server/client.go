@@ -55,6 +55,7 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			break
 		}
 
+		MessageCounterVec.WithLabelValues("incoming").Inc()
 
 		log.Printf("Received raw message: %s", data)
 
@@ -62,8 +63,6 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 		if err != nil {
 			continue
 		}
-
-		MessageCounterVec.WithLabelValues("incoming").Inc()
 
 		broadcast <- &message
 	}
