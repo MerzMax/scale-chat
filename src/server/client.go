@@ -33,6 +33,8 @@ func (client *Client) HandleOutgoing() {
 				log.Println("Cannot send message via WebSocket", err)
 				continue
 			}
+
+			MessageCounterVec.WithLabelValues("outgoing").Inc()
 		}
 	}
 }
@@ -53,12 +55,15 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			break
 		}
 
+
 		log.Printf("Received raw message: %s", data)
 
 		message, err := chat.ParseMessage(data)
 		if err != nil {
 			continue
 		}
+
+		MessageCounterVec.WithLabelValues("incoming").Inc()
 
 		broadcast <- &message
 	}

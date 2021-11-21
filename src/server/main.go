@@ -33,6 +33,9 @@ func main() {
 	// Register Prometheus endpoint
 	internalMux.Handle("/metrics", promhttp.Handler())
 
+	// Initiate Prometheus monitoring
+	InitMonitoring()
+
 	// Listen on internal metrics port
 	go func() {
 		err := http.ListenAndServe(":8081", internalMux)
