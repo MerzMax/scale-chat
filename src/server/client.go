@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"scale-chat/chat"
 )
@@ -34,6 +35,7 @@ func (client *Client) HandleOutgoing() {
 				continue
 			}
 
+			message.ProcessingTimer.ObserveDuration()
 			MessageCounterVec.WithLabelValues("outgoing").Inc()
 		}
 	}
@@ -55,6 +57,8 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			break
 		}
 
+		timer := prometheus.NewTimer(MessageProcessingTime)
+
 		MessageCounterVec.WithLabelValues("incoming").Inc()
 
 		log.Printf("Received raw message: %s", data)
@@ -63,6 +67,8 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 		if err != nil {
 			continue
 		}
+
+		message.ProcessingTimer = timer
 
 		broadcast <- &message
 	}

@@ -2,14 +2,16 @@ package chat
 
 import (
 	"encoding/json"
+	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"time"
 )
 
 type Message struct {
-	Text   string    `json:"text"`
-	Sender string    `json:"sender"`
-	SentAt time.Time `json:"sent_at"`
+	Text            string    `json:"text"`
+	Sender          string    `json:"sender"`
+	SentAt          time.Time `json:"sent_at"`
+	ProcessingTimer *prometheus.Timer
 }
 
 func ParseMessage(data []byte) (Message, error) {

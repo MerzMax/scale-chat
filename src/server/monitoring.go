@@ -12,6 +12,16 @@ var MessageCounterVec = prometheus.NewCounterVec(
 	[]string{"type"},
 )
 
+var MessageProcessingTime = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: "scale_chat",
+		Subsystem: "timing",
+		Name:      "processing",
+		Help:      "Time to process a message from receiving to sending",
+	},
+)
+
 func InitMonitoring() {
 	prometheus.MustRegister(MessageCounterVec)
+	prometheus.MustRegister(MessageProcessingTime)
 }
