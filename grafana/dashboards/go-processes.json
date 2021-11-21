@@ -30,7 +30,7 @@
   "panels": [
     {
       "datasource": null,
-      "description": "Total number of messages going in and out of the application",
+      "description": "Total number of messages going in and out of the application as a 10s rate",
       "fieldConfig": {
         "defaults": {
           "color": {
