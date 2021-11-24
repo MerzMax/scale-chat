@@ -31,8 +31,6 @@ func main() {
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
 
-	clientsCloseConnection := make([]chan string, 0)
-
 	// If the application isn't started in loadtest mode there is just one client that will be started.
 	if !*loadtest {
 		*numOfClients = 1
@@ -42,8 +40,9 @@ func main() {
 	for i := 0; i < *numOfClients; i++ {
 		log.Printf("Creating client number: %v / %v", i + 1, *numOfClients)
 
-		closeConnection := make(chan string, 1)
-		clientsCloseConnection = append(clientsCloseConnection, closeConnection)
+		// Listen to system interrupts -> program will be stopped
+		closeConnection := make(chan os.Signal, 1)
+		signal.Notify(closeConnection, os.Interrupt)
 
 		go func() {
 			client := client.Client{
@@ -61,14 +60,9 @@ func main() {
 		}()
 	}
 
-	for {
-		select {
-		case <-sysInterrupt:
-			for _, closeConnection := range clientsCloseConnection {
-				closeConnection <- "Closing connection due to system interrupt."
-				close(closeConnection)
-			}
-		}
+	select {
+	case <-sysInterrupt:
+		log.Println("SYS INTERRUPT")
 	}
 }
 

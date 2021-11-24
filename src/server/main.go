@@ -18,6 +18,7 @@ func main() {
 
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/ws", wsHandler)
+	http.HandleFunc("/", demoHandler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal(err)
@@ -26,6 +27,10 @@ func main() {
 
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
+
+	// Allow requests from every origin
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
 	// Upgrade the http connection to ws
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
@@ -47,14 +52,9 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 	writer.Write([]byte("Hello World!"))
 }
 
-// Method sends a message to the connected loadtest-client
-func replyMessage(wsConn *websocket.Conn) {
-	message := "Hello you! :)"
-	err := wsConn.WriteMessage(websocket.TextMessage, []byte(message))
-	if err != nil {
-		log.Println("Error during sending message:", err)
-	}
-	log.Printf("Me: %s", message)
+func demoHandler(writer http.ResponseWriter, req *http.Request) {
+	log.Println("/ endpoint requested")
+	http.ServeFile(writer, req, "./demo.html")
 }
 
 func broadcastMessages() {
