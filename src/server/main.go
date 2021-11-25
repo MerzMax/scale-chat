@@ -23,6 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Server Started and running!")
 }
 
 // Event handler for the /ws endpoint

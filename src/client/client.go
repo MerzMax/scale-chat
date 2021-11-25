@@ -84,12 +84,20 @@ func receiveHandler(client *Client) {
 			return
 		}
 
+		now:= time.Now()
+
 		message, err := chat.ParseMessage(data)
 		if err != nil {
 			continue
 		}
 
-		log.Printf("%v", message)
+		// Measuring the RTT if the message was sent by this client.
+		if message.Sender == client.id {
+			rtt := now.Sub(message.SentAt).Microseconds()
+			log.Printf("RTT: %d", rtt)
+		} else {
+			log.Printf("%v", message)
+		}
 	}
 }
 
