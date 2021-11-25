@@ -10,11 +10,21 @@ TODO
 
 ## Repository structure
 
-### Documentation
-TODO
+### Documentation (docs)
+All the documentation will be stored in the [./docs](./docs) directory. We will not documented the server and the client 
+in detail. They will not be the focus of this project, but it could be that we have to make changes on the server and 
+the client in order to move along. 
+
+The [./docs](./docs) directory contains several subdirectories: 
+
+* `loadtest-result/<stage_id>` : Contains all data collected while executing loadtest and graphics helping explain the
+stage 
+* `scaling/<stage_id>`: Contains detailed information and documentation about the goal of the development stage. 
+Besides this the loadtest results will be interpreted and approaches solving problems will be discussed.
+* `loadtest-setup.md`: Contains the documentation about the loadtest setup, its components and its general process.
 
 
-### Implementation 
+### Implementation (src)
 The projects implementation lives in the [./src](./src) folder and contains several directories: 
 
 * `chat` : Contains models that will be shared with the server and the client.
@@ -93,7 +103,18 @@ $ go run .
 
 ## Running Loadtests
 
-TODO
+For a more detailed explaination on the loadtests and how to run them you can take a look at the 
+[loadtest-setup](docs/loadtest-setup.md).
+
+
+The project is build on several stages. Every stage displays a major problem we run into while scaling the application.
+A more detailed explaination of the stages, their problems and solutions will be documented separately in the 
+[docs/scaling](docs/scaling) directory. 
+
+**Quicklinks:** 
+
+* [loadtest-setup](docs/loadtest-setup.md)
+* [stage 1](docs/scaling/stage_1.md)
 
 
 
