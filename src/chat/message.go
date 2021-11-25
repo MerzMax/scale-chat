@@ -7,9 +7,9 @@ import (
 )
 
 type Message struct {
-	Text            string    `json:"text"`
-	Sender          string    `json:"sender"`
-	SentAt          time.Time `json:"sent_at"`
+	Text   string    `json:"text"`
+	Sender string    `json:"sender"`
+	SentAt time.Time `json:"sent_at"`
 }
 
 func ParseMessage(data []byte) (Message, error) {
