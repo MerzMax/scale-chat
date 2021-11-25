@@ -1,4 +1,4 @@
-# Loadtest **Stage1**
+# Loadtest **Stage 1**
 
 ## Goal 
 
