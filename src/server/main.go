@@ -79,10 +79,10 @@ func demoHandler(writer http.ResponseWriter, req *http.Request) {
 func broadcastMessages() {
 	for {
 		select {
-		case message := <-broadcast:
-			chatHistory = append(chatHistory, message.message)
+		case wrapper := <-broadcast:
+			chatHistory = append(chatHistory, wrapper.message)
 			for _, client := range clients {
-				client.outgoing <- message
+				client.outgoing <- wrapper
 			}
 		}
 	}

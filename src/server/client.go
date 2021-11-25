@@ -36,7 +36,7 @@ func (client *Client) HandleOutgoing() {
 
 			err = client.wsConn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Println("Cannot send wrapper via WebSocket", err)
+				log.Println("Cannot send message via WebSocket", err)
 				continue
 			}
 
