@@ -17,7 +17,7 @@ var upgrader = websocket.Upgrader{
 var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
-var broadcast = make(chan *chat.Message)
+var broadcast = make(chan *MessageWrapper)
 
 func main() {
 	go broadcastMessages()
@@ -61,7 +61,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	outgoing := make(chan *chat.Message) // TODO: Add buffer?
+	outgoing := make(chan *MessageWrapper) // TODO: Add buffer?
 	client := Client{wsConn: wsConn, outgoing: outgoing}
 	clients = append(clients, &client)
 
@@ -80,7 +80,7 @@ func broadcastMessages() {
 	for {
 		select {
 		case message := <-broadcast:
-			chatHistory = append(chatHistory, message)
+			chatHistory = append(chatHistory, message.message)
 			for _, client := range clients {
 				client.outgoing <- message
 			}

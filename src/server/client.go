@@ -9,7 +9,12 @@ import (
 
 type Client struct {
 	wsConn   *websocket.Conn
-	outgoing chan *chat.Message
+	outgoing chan *MessageWrapper
+}
+
+type MessageWrapper struct {
+	message         *chat.Message
+	processingTimer *prometheus.Timer
 }
 
 func (client *Client) HandleOutgoing() {
@@ -23,25 +28,25 @@ func (client *Client) HandleOutgoing() {
 
 	for {
 		select {
-		case message := <-client.outgoing:
-			data, err := message.ToJSON()
+		case wrapper := <-client.outgoing:
+			data, err := wrapper.message.ToJSON()
 			if err != nil {
 				continue
 			}
 
 			err = client.wsConn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				log.Println("Cannot send message via WebSocket", err)
+				log.Println("Cannot send wrapper via WebSocket", err)
 				continue
 			}
 
-			message.ProcessingTimer.ObserveDuration()
+			wrapper.processingTimer.ObserveDuration()
 			MessageCounterVec.WithLabelValues("outgoing").Inc()
 		}
 	}
 }
 
-func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
+func (client *Client) HandleIncoming(broadcast chan *MessageWrapper) {
 	defer func() {
 		err := client.wsConn.Close()
 		if err != nil {
@@ -68,8 +73,8 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			continue
 		}
 
-		message.ProcessingTimer = timer
+		wrapper := MessageWrapper{message: &message, processingTimer: timer}
 
-		broadcast <- &message
+		broadcast <- &wrapper
 	}
 }
