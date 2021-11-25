@@ -14,23 +14,23 @@ import (
 var consoleReader = bufio.NewReader(os.Stdin)
 
 type Client struct {
-	wsConnection 	 	websocket.Conn
-	id           	 	string
-	CloseConnection  	chan string
-	ServerUrl		 	string
-	IsLoadtestClient	bool
-	MsgSize			int
-	MsgFrequency	int
+	wsConnection     websocket.Conn
+	id               string
+	CloseConnection  chan os.Signal
+	ServerUrl        string
+	IsLoadtestClient bool
+	MsgSize          int
+	MsgFrequency     int
 }
 
-func (client *Client) Start() error{
-	if client.IsLoadtestClient{
+func (client *Client) Start() error {
+	if client.IsLoadtestClient {
 		client.id = uuid.New().String()
 	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
 		input, err := consoleReader.ReadString('\n')
 		// convert CRLF to LF
-		client.id= strings.Replace(input, "\n", "", -1)
+		client.id = strings.Replace(input, "\n", "", -1)
 		if err != nil || len(client.id) < 1 {
 			log.Printf("Failed to read the name input. Using default id: MuM")
 			client.id = "MuM"
@@ -42,7 +42,6 @@ func (client *Client) Start() error{
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
 	}
-	defer wsConnection.Close()
 
 	client.wsConnection = *wsConnection
 
@@ -62,13 +61,14 @@ func (client *Client) Start() error{
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				log.Println("Error while closing the ws connection: ", err)
+				log.Println("Error while closing the ws connection gracefully: ", err)
 				return err
 			}
 
 			// Timeout for connection close
 			select {
 			case <-time.After(time.Second):
+				log.Println("Terminating. Timeout for connection close.")
 			}
 			return nil
 		}
@@ -95,6 +95,7 @@ func receiveHandler(client *Client) {
 
 // Handles outgoing ws messages
 func sendHandler(client *Client) {
+	defer client.wsConnection.Close()
 	for {
 		var text string
 		if client.IsLoadtestClient {
