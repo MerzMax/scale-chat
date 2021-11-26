@@ -29,9 +29,6 @@ func main() {
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
 
-	// Allow requests from every origin
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-
 	// Upgrade the http connection to ws
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
@@ -54,7 +51,7 @@ func hello(writer http.ResponseWriter, req *http.Request) {
 }
 
 func demoHandler(writer http.ResponseWriter, req *http.Request) {
-	log.Println("/ endpoint requested")
+	log.Println("serving demo HTML")
 	http.ServeFile(writer, req, "./demo.html")
 }
 
