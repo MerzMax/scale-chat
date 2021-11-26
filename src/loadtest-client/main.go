@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"scale-chat/client"
+	"time"
 )
 
 func main() {
@@ -51,7 +53,7 @@ func main() {
 		signal.Notify(closeConnection, os.Interrupt)
 
 		go func() {
-			client := client.Client{
+			chatClient := client.Client{
 				ServerUrl:        	*serverUrl,
 				CloseConnection:  	closeConnection,
 				IsLoadtestClient: 	*loadtest,
@@ -60,7 +62,7 @@ func main() {
 				MessageEvents: 		msgEvents,
 			}
 
-			err := client.Start()
+			err := chatClient.Start()
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
@@ -75,12 +77,23 @@ func main() {
 
 // The function processes MessageEventEntries and writes a csv with the data collected
 func processMessageEvents (messageEvents chan client.MessageEventEntry) {
+	// Create new file and prepare writer
+	fileName := "loadtest-client-" +  time.Now().Format("02-01-2006-15-04-05") + ".csv"
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	csvWriter := csv.NewWriter(file)
+
 	// Process incoming messages
 	for {
 		select {
 		case msgEventEntry := <- messageEvents:
-			// TODO: Write into CSV
-			log.Println(msgEventEntry)
+			err = csvWriter.Write(msgEventEntry.ConvertToStringArray())
+			if err != nil {
+				log.Fatalf("%v", err)
+			}
 		}
 	}
 }
