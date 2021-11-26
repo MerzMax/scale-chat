@@ -3,3 +3,5 @@
 src/server/server
 src/client/client
 src/loadtest-client/loadtest-client
+
+*.csv

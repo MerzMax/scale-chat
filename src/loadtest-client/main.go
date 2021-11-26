@@ -83,6 +83,7 @@ func processMessageEvents (messageEvents chan client.MessageEventEntry) {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	defer file.Close()
 
 	csvWriter := csv.NewWriter(file)
 
