@@ -21,6 +21,7 @@ type Client struct {
 	IsLoadtestClient bool
 	MsgSize          int
 	MsgFrequency     int
+	MessageEvents    chan MessageEventEntry
 }
 
 func (client *Client) Start() error {
@@ -84,17 +85,23 @@ func receiveHandler(client *Client) {
 			return
 		}
 
-		now:= time.Now()
+		receivedAt := time.Now()
 
 		message, err := chat.ParseMessage(data)
 		if err != nil {
 			continue
 		}
 
-		// Measuring the RTT if the message was sent by this client.
-		if message.Sender == client.id {
-			rtt := now.Sub(message.SentAt).Microseconds()
-			log.Printf("RTT: %d", rtt)
+		// If the client was the sender and the loadtest mode is activated, there will be added a new message event
+		// with the metadata of this message.
+		if message.Sender == client.id && client.IsLoadtestClient {
+			var msgEventEntry = MessageEventEntry{
+				ClientId:  client.id,
+				MessageId: message.MessageID,
+				TimeStamp: receivedAt,
+				Type: Received,
+			}
+			client.MessageEvents <- msgEventEntry
 		} else {
 			log.Printf("%v", message)
 		}
@@ -104,6 +111,10 @@ func receiveHandler(client *Client) {
 // Handles outgoing ws messages
 func sendHandler(client *Client) {
 	defer client.wsConnection.Close()
+
+	// Each message has an id to be able to follow the message in the message flow.
+	var messageId uint64 = 1
+
 	for {
 		var text string
 		if client.IsLoadtestClient {
@@ -112,7 +123,7 @@ func sendHandler(client *Client) {
 			// repeat the string to reach the message size we want to have-
 			text = strings.Repeat("a", client.MsgSize)
 		} else {
-			log.Printf("Please imput the message you want to send:")
+			log.Printf("Please input the message you want to send:")
 			input, err := consoleReader.ReadString('\n')
 			// convert CRLF to LF
 			text = strings.Replace(input, "\n", "", -1)
@@ -123,9 +134,10 @@ func sendHandler(client *Client) {
 		}
 
 		message := chat.Message{
-			Text:   text,
-			Sender: client.id,
-			SentAt: time.Now(),
+			MessageID: messageId,
+			Text:      text,
+			Sender:    client.id,
+			SentAt:    time.Now(),
 		}
 
 		data, err := message.ToJSON()
@@ -133,10 +145,24 @@ func sendHandler(client *Client) {
 			continue
 		}
 
+		ts := time.Now()
+
 		err = client.wsConnection.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
 			log.Println("Error while sending message:", err)
 			return
 		}
+
+		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+		if client.IsLoadtestClient {
+			var msgEventEntry = MessageEventEntry{
+				ClientId:  client.id,
+				MessageId: message.MessageID,
+				TimeStamp: ts,
+				Type: Sent,
+			}
+			client.MessageEvents <- msgEventEntry
+		}
+		messageId++
 	}
 }

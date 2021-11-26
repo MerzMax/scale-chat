@@ -7,6 +7,7 @@ import (
 )
 
 type Message struct {
+	MessageID uint64 `json:"message_id"`
 	Text   string    `json:"text"`
 	Sender string    `json:"sender"`
 	SentAt time.Time `json:"sent_at"`

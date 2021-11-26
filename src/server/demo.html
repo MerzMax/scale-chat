@@ -6,6 +6,8 @@
         <script>
 
             window.onload = function () {
+                // The messageId will be increased for each message that will be sent.
+                var messageId = 0
 
                 resetInputFields()
 
@@ -63,6 +65,7 @@
                     var now =  new Date(Date.now())
 
                     var message = {
+                        message_id: messageId,
                         text: messageInput.value,
                         sender: userIdInput.value,
                         sent_at: now.toISOString()
@@ -80,6 +83,8 @@
                     // Reset message input and focus element
                     messageInput.value = ""
                     messageInput.focus()
+
+                    messageId++
 
                     return false;
                 };

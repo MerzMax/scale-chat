@@ -31,10 +31,16 @@ func main() {
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
 
+	var msgEvents chan client.MessageEventEntry
+
 	// If the application isn't started in loadtest mode there is just one client that will be started.
 	if !*loadtest {
 		*numOfClients = 1
+	} else {
+		msgEvents = make(chan client.MessageEventEntry)
 	}
+
+	go processMessageEvents(msgEvents)
 
 	// Create numOfClients clients that can chat
 	for i := 0; i < *numOfClients; i++ {
@@ -51,6 +57,7 @@ func main() {
 				IsLoadtestClient: 	*loadtest,
 				MsgFrequency: 		*msgFrequency,
 				MsgSize: 			*msgSize,
+				MessageEvents: 		msgEvents,
 			}
 
 			err := client.Start()
@@ -63,6 +70,18 @@ func main() {
 	select {
 	case <-sysInterrupt:
 		log.Println("SYS INTERRUPT")
+	}
+}
+
+// The function processes MessageEventEntries and writes a csv with the data collected
+func processMessageEvents (messageEvents chan client.MessageEventEntry) {
+	// Process incoming messages
+	for {
+		select {
+		case msgEventEntry := <- messageEvents:
+			// TODO: Write into CSV
+			log.Println(msgEventEntry)
+		}
 	}
 }
 
