@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
+	// READ IN FILES
 	var fileNames []string
-	fileData := make(map[string][]client.MessageEventEntry)
 
 	root := "../loadtest-results"
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -27,6 +27,9 @@ func main() {
 
 	fileNames = filterFileNames(fileNames)
 
+	// PARSE THE CSV DATA
+	fileData := make(map[string][]client.MessageEventEntry)
+
 	for _, fileName := range fileNames {
 		res, err := parseCsvFile(fileName)
 		if err != nil {
@@ -34,7 +37,15 @@ func main() {
 		}
 		fileData[fileName] = res
 	}
-	
+
+	// CALCULATE RTT for each message
+	roundTripTimes := make(map[string][]RoundTripTimeEntry)
+
+	for key, data := range fileData {
+		rttEntries := calculateRtts(data)
+		roundTripTimes[key] = rttEntries
+	}
+
 	log.Println("---------------------")
 	log.Println("")
 	log.Println("COMPLETED")
@@ -43,6 +54,13 @@ func main() {
 
 }
 
+type RoundTripTimeEntry struct {
+	ClientId string
+	MessageId string
+	rttInMs uint
+}
+
+// Filter a list of filenames. All csv files will be returned
 func filterFileNames(files []string) []string {
 	var res []string
 	for _, file := range files{
@@ -53,6 +71,7 @@ func filterFileNames(files []string) []string {
 	return res
 }
 
+// Parse a csv file at the filepath and convert the data in an array of MessageEventEntry structs
 func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	// Open the csv file
 	f, err := os.Open(filepath)
@@ -76,6 +95,7 @@ func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	return msgEventEntries, nil
 }
 
+// Convert an array of string arrays int an array of MessageEventEntry structs
 func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, error) {
 	var msgEventEntries []client.MessageEventEntry
 
@@ -113,3 +133,10 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 
 	return msgEventEntries, nil
 }
+
+func calculateRtts(msgEventEntries []client.MessageEventEntry) []RoundTripTimeEntry {
+	var rttEntries []RoundTripTimeEntry
+	
+	return rttEntries
+}
+
