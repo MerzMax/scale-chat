@@ -51,7 +51,6 @@ func main() {
 	log.Println("COMPLETED")
 	log.Println("")
 	log.Println("---------------------")
-
 }
 
 type RoundTripTimeEntry struct {
