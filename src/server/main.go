@@ -7,7 +7,12 @@ import (
 	"scale-chat/chat"
 )
 
-var upgrader = websocket.Upgrader{} // use default options
+// WebSocket connection configuration
+var upgrader = websocket.Upgrader{
+	ReadBufferSize: 128,
+	WriteBufferSize: 128,
+}
+
 var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
@@ -16,9 +21,9 @@ var broadcast = make(chan *chat.Message)
 func main() {
 	go broadcastMessages()
 
-	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/", demoHandler)
+
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal(err)
@@ -41,12 +46,6 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 
 	go client.HandleOutgoing()
 	go client.HandleIncoming(broadcast)
-}
-
-// Event handler for the /hello endpoint
-func hello(writer http.ResponseWriter, req *http.Request) {
-	log.Println("/hello endpoint requested")
-	writer.Write([]byte("Hello World!"))
 }
 
 func demoHandler(writer http.ResponseWriter, req *http.Request) {
