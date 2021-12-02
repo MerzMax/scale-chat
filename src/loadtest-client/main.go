@@ -79,7 +79,7 @@ func main() {
 func processMessageEvents (messageEvents chan client.MessageEventEntry) {
 	// Create new file and prepare writer
 	fileName := "loadtest-client-" +  time.Now().Format("02-01-2006-15-04-05") + ".csv"
-	file, err := os.Create(fileName)
+	file, err := os.Create("./loadtest-results/" + fileName)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
