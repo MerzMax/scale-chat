@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"scale-chat/chat"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -93,12 +92,12 @@ func receiveHandler(client *Client) {
 			continue
 		}
 
-		// If the loadtest mode is activated, there will be added a new message event  with the metadata of this
-		// message.
-		if message.Sender == client.id && client.IsLoadtestClient {
+		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+		if client.IsLoadtestClient {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
-				MessageId: message.Sender + "_" + strconv.FormatUint(message.MessageID, 10),
+				SenderId: message.Sender,
+				MessageId: message.MessageID,
 				TimeStamp: receivedAt,
 				Type: Received,
 			}
@@ -158,7 +157,8 @@ func sendHandler(client *Client) {
 		if client.IsLoadtestClient {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
-				MessageId: client.id + "_" + strconv.FormatUint(messageId, 10),
+				SenderId: client.id,
+				MessageId: message.MessageID,
 				TimeStamp: ts,
 				Type: Sent,
 			}

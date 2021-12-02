@@ -17,14 +17,16 @@ func (t Type) String() string {
 }
 
 type MessageEventEntry struct {
-	MessageId string
+	MessageId uint64
+	SenderId string
 	ClientId string
 	Type Type
 	TimeStamp time.Time
 }
 
 func (m MessageEventEntry) ConvertToStringArray() []string {
-	return []string{m.MessageId,
+	return []string{strconv.FormatUint(m.MessageId, 10),
+					m.SenderId,
 					m.ClientId,
 					m.Type.String(),
 					strconv.FormatUint(uint64(m.TimeStamp.UnixMicro()), 10)}

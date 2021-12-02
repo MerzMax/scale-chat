@@ -94,7 +94,7 @@ func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	return msgEventEntries, nil
 }
 
-// Convert an array of string arrays int an array of MessageEventEntry structs
+// Convert an array of string arrays into an array of MessageEventEntry structs
 func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, error) {
 	var msgEventEntries []client.MessageEventEntry
 
@@ -109,8 +109,10 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 					}
 					msgEventEntry.MessageId = number
 				} else if j == 1 {
-					msgEventEntry.ClientId = field
+					msgEventEntry.SenderId = field
 				} else if j == 2 {
+					msgEventEntry.ClientId = field
+				} else if j == 3 {
 					if field == "Sent" {
 						msgEventEntry.Type = client.Sent
 					} else if field == "Received" {
@@ -118,7 +120,7 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 					} else {
 						return nil, errors.New("Unknown type: " + field)
 					}
-				} else if j == 3 {
+				} else if j == 4 {
 					seconds, err := strconv.ParseInt(field, 10, 64)
 					if err != nil {
 						return nil, err
