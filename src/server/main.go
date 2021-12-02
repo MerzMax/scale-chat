@@ -48,11 +48,13 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	go client.HandleIncoming(broadcast)
 }
 
+// Handles the / endpoint and serves the demo html chat client
 func demoHandler(writer http.ResponseWriter, req *http.Request) {
 	log.Println("serving demo HTML")
 	http.ServeFile(writer, req, "./demo.html")
 }
 
+// Listens for messages on the broadcast channel and sends them to all connected clients
 func broadcastMessages() {
 	for {
 		select {
