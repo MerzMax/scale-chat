@@ -39,12 +39,14 @@ func main() {
 	}
 
 	// CALCULATE RTT for each message
-	roundTripTimes := make(map[string][]RoundTripTimeEntry)
+	roundTripTimeEntries := make(map[string][]RoundTripTimeEntry)
 
 	for key, data := range fileData {
 		rttEntries := calculateRtts(data)
-		roundTripTimes[key] = rttEntries
+		roundTripTimeEntries[key] = rttEntries
 	}
+
+	log.Println(roundTripTimeEntries)
 
 	log.Println("---------------------")
 	log.Println("")
@@ -55,8 +57,8 @@ func main() {
 
 type RoundTripTimeEntry struct {
 	ClientId string
-	MessageId string
-	rttInMs uint
+	MessageId uint64
+	rttInNs   int64
 }
 
 // Filter a list of filenames. All csv files will be returned
@@ -70,7 +72,7 @@ func filterFileNames(files []string) []string {
 	return res
 }
 
-// Parse a csv file at the filepath and convert the data in an array of MessageEventEntry structs
+// Parses a csv file at the filepath and convert the data in an array of MessageEventEntry structs
 func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	// Open the csv file
 	f, err := os.Open(filepath)
@@ -94,7 +96,7 @@ func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	return msgEventEntries, nil
 }
 
-// Convert an array of string arrays into an array of MessageEventEntry structs
+// Converts an array of string arrays into an array of MessageEventEntry structs
 func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, error) {
 	var msgEventEntries []client.MessageEventEntry
 
@@ -135,9 +137,39 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 	return msgEventEntries, nil
 }
 
+// Calculates the RTT for a given set of MessageEventEntry structs
 func calculateRtts(msgEventEntries []client.MessageEventEntry) []RoundTripTimeEntry {
 	var rttEntries []RoundTripTimeEntry
-	
+
+	var sentMsgEventEntries []client.MessageEventEntry
+	var receivedMsgEventEntries []client.MessageEventEntry
+
+	// Filter for send and received messages that are received by the sender
+	for _, msgEventEntry := range msgEventEntries {
+		if msgEventEntry.Type == client.Sent {
+			sentMsgEventEntries = append(sentMsgEventEntries, msgEventEntry)
+		} else if msgEventEntry.SenderId == msgEventEntry.ClientId && msgEventEntry.Type == client.Received {
+			receivedMsgEventEntries = append(receivedMsgEventEntries, msgEventEntry)
+		}
+	}
+
+	// Pair send and receive message and calculate rtt
+	for _, sentMsgEventEntry := range sentMsgEventEntries {
+
+		rttEntry := RoundTripTimeEntry{
+			MessageId: sentMsgEventEntry.MessageId,
+			ClientId: sentMsgEventEntry.ClientId,
+		}
+
+		for _, receivedMsgEventEntry := range receivedMsgEventEntries {
+			if sentMsgEventEntry.MessageId == receivedMsgEventEntry.MessageId {
+				rttEntry.rttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+			}
+		}
+
+		rttEntries = append(rttEntries, rttEntry)
+	}
+
 	return rttEntries
 }
 
