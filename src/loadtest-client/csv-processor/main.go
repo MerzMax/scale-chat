@@ -39,10 +39,10 @@ func main() {
 	}
 
 	// CALCULATE RTT for each message
-	roundTripTimeEntries := make(map[string][]RoundTripTimeEntry)
+	roundTripTimeEntries := make(map[string][]MessageLatencyEntry)
 
 	for key, data := range fileData {
-		rttEntries := calculateRtts(data)
+		rttEntries := calculateMessageLatency(data)
 		roundTripTimeEntries[key] = rttEntries
 	}
 
@@ -55,10 +55,11 @@ func main() {
 	log.Println("---------------------")
 }
 
-type RoundTripTimeEntry struct {
-	ClientId string
-	MessageId uint64
-	rttInNs   int64
+type MessageLatencyEntry struct {
+	SenderId  		string
+	MessageId 		uint64
+	RttInNs       	int64
+	LatenciesInMs 	[]int64
 }
 
 // Filter a list of filenames. All csv files will be returned
@@ -138,38 +139,44 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 }
 
 // Calculates the RTT for a given set of MessageEventEntry structs
-func calculateRtts(msgEventEntries []client.MessageEventEntry) []RoundTripTimeEntry {
-	var rttEntries []RoundTripTimeEntry
+func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []MessageLatencyEntry {
+	var messageLatencies []MessageLatencyEntry
 
 	var sentMsgEventEntries []client.MessageEventEntry
 	var receivedMsgEventEntries []client.MessageEventEntry
 
-	// Filter for send and received messages that are received by the sender
+	// Filter for send and received messages
 	for _, msgEventEntry := range msgEventEntries {
 		if msgEventEntry.Type == client.Sent {
 			sentMsgEventEntries = append(sentMsgEventEntries, msgEventEntry)
-		} else if msgEventEntry.SenderId == msgEventEntry.ClientId && msgEventEntry.Type == client.Received {
+		} else if msgEventEntry.Type == client.Received {
 			receivedMsgEventEntries = append(receivedMsgEventEntries, msgEventEntry)
 		}
 	}
 
-	// Pair send and receive message and calculate rtt
+	// Pair sent and received messages to calculate rtt and latencies
 	for _, sentMsgEventEntry := range sentMsgEventEntries {
 
-		rttEntry := RoundTripTimeEntry{
+		msgLatency := MessageLatencyEntry{
 			MessageId: sentMsgEventEntry.MessageId,
-			ClientId: sentMsgEventEntry.ClientId,
+			SenderId:  sentMsgEventEntry.ClientId,
 		}
 
 		for _, receivedMsgEventEntry := range receivedMsgEventEntries {
 			if sentMsgEventEntry.MessageId == receivedMsgEventEntry.MessageId {
-				rttEntry.rttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+
+				if sentMsgEventEntry.SenderId == receivedMsgEventEntry.SenderId {
+					msgLatency.RttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+				} else {
+					latency :=  receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, latency)
+				}
 			}
 		}
 
-		rttEntries = append(rttEntries, rttEntry)
+		messageLatencies = append(messageLatencies, msgLatency)
 	}
 
-	return rttEntries
+	return messageLatencies
 }
 
