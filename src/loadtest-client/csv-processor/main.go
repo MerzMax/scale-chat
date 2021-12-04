@@ -164,9 +164,9 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 
 		for _, receivedMsgEventEntry := range receivedMsgEventEntries {
 			if sentMsgEventEntry.MessageId == receivedMsgEventEntry.MessageId {
-
 				if sentMsgEventEntry.SenderId == receivedMsgEventEntry.SenderId {
 					msgLatency.RttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, msgLatency.RttInNs)
 				} else {
 					latency :=  receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
 					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, latency)
