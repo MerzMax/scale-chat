@@ -10,7 +10,7 @@ import (
 
 // WebSocket connection configuration
 var upgrader = websocket.Upgrader{
-	ReadBufferSize: 128,
+	ReadBufferSize:  128,
 	WriteBufferSize: 128,
 }
 
@@ -27,7 +27,7 @@ func main() {
 	internalMux := http.NewServeMux()
 
 	// Register public endpoints
-	publicMux.HandleFunc("/hello", demoHandler)
+	publicMux.HandleFunc("/", demoHandler)
 	publicMux.HandleFunc("/ws", wsHandler)
 
 	// Register Prometheus endpoint
