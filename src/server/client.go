@@ -2,13 +2,19 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"scale-chat/chat"
 )
 
 type Client struct {
 	wsConn   *websocket.Conn
-	outgoing chan *chat.Message
+	outgoing chan *MessageWrapper
+}
+
+type MessageWrapper struct {
+	message         *chat.Message
+	processingTimer *prometheus.Timer
 }
 
 func (client *Client) HandleOutgoing() {
@@ -22,8 +28,8 @@ func (client *Client) HandleOutgoing() {
 
 	for {
 		select {
-		case message := <-client.outgoing:
-			data, err := message.ToJSON()
+		case wrapper := <-client.outgoing:
+			data, err := wrapper.message.ToJSON()
 			if err != nil {
 				continue
 			}
@@ -33,11 +39,14 @@ func (client *Client) HandleOutgoing() {
 				log.Println("Cannot send message via WebSocket", err)
 				continue
 			}
+
+			wrapper.processingTimer.ObserveDuration()
+			MessageCounterVec.WithLabelValues("outgoing").Inc()
 		}
 	}
 }
 
-func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
+func (client *Client) HandleIncoming(broadcast chan *MessageWrapper) {
 	defer func() {
 		err := client.wsConn.Close()
 		if err != nil {
@@ -53,6 +62,10 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			break
 		}
 
+		timer := prometheus.NewTimer(MessageProcessingTime)
+
+		MessageCounterVec.WithLabelValues("incoming").Inc()
+
 		log.Printf("Received raw message: %s", data)
 
 		message, err := chat.ParseMessage(data)
@@ -60,6 +73,8 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			continue
 		}
 
-		broadcast <- &message
+		wrapper := MessageWrapper{message: &message, processingTimer: timer}
+
+		broadcast <- &wrapper
 	}
 }
