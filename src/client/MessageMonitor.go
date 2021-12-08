@@ -23,7 +23,7 @@ type MessageEventEntry struct {
 	Timestamp time.Time
 }
 
-func (m MessageEventEntry) ConvertToStringArray() []string {
+func (m MessageEventEntry) StringArray() []string {
 	return []string{
 		strconv.FormatUint(m.MessageId, 10),
 		m.ClientId,
