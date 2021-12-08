@@ -42,7 +42,9 @@ func main() {
 		msgEvents = make(chan client.MessageEventEntry)
 	}
 
-	go processMessageEvents(msgEvents)
+	if *loadtest {
+		go processMessageEvents(msgEvents)
+	}
 
 	// Create numOfClients clients that can chat
 	for i := 0; i < *numOfClients; i++ {
@@ -54,12 +56,12 @@ func main() {
 
 		go func() {
 			chatClient := client.Client{
-				ServerUrl:        	*serverUrl,
-				CloseConnection:  	closeConnection,
-				IsLoadtestClient: 	*loadtest,
-				MsgFrequency: 		*msgFrequency,
-				MsgSize: 			*msgSize,
-				MessageEvents: 		msgEvents,
+				ServerUrl:        *serverUrl,
+				CloseConnection:  closeConnection,
+				IsLoadtestClient: *loadtest,
+				MsgFrequency:     *msgFrequency,
+				MsgSize:          *msgSize,
+				MessageEvents:    msgEvents,
 			}
 
 			err := chatClient.Start()
@@ -76,9 +78,9 @@ func main() {
 }
 
 // The function processes MessageEventEntries and writes a csv with the data collected
-func processMessageEvents (messageEvents chan client.MessageEventEntry) {
+func processMessageEvents(messageEvents chan client.MessageEventEntry) {
 	// Create new file and prepare writer
-	fileName := "loadtest-client-" +  time.Now().Format("02-01-2006-15-04-05") + ".csv"
+	fileName := "loadtest-client-" + time.Now().Format("02-01-2006-15-04-05") + ".csv"
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Fatalf("%v", err)
@@ -90,7 +92,7 @@ func processMessageEvents (messageEvents chan client.MessageEventEntry) {
 	// Process incoming messages
 	for {
 		select {
-		case msgEventEntry := <- messageEvents:
+		case msgEventEntry := <-messageEvents:
 			err = csvWriter.Write(msgEventEntry.ConvertToStringArray())
 			if err != nil {
 				log.Fatalf("%v", err)
