@@ -5,13 +5,16 @@
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <script>
         window.onload = function () {
+            // The messageId will be increased for each message that will be sent.
+            var messageId = 0
+                
             resetInputFields()
 
             if (!('WebSocket' in window)) {
                 alert('WebSocket NOT supported by your Browser!')
                 return
             }
-
+          
             const socket = new WebSocket(`ws://${document.location.host}/ws`)
             const userIdInput = document.getElementById('userIdInput')
             const messageInput = document.getElementById('messageInput')
@@ -62,6 +65,7 @@
                 const now = new Date(Date.now())
 
                 const message = {
+                    message_id: messageId,
                     text: messageInput.value,
                     sender: userIdInput.value,
                     sent_at: now.toISOString()
@@ -79,6 +83,8 @@
                 // Reset message input and focus element
                 messageInput.value = ""
                 messageInput.focus()
+              
+                messageId++
 
                 return false
             }

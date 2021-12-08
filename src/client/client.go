@@ -18,13 +18,14 @@ type Client struct {
 	id               string
 	CloseConnection  chan os.Signal
 	ServerUrl        string
-	IsLoadtestClient bool
+	IsLoadTestClient bool
 	MsgSize          int
 	MsgFrequency     int
+	MsgEvents        chan *MessageEventEntry
 }
 
 func (client *Client) Start() error {
-	if client.IsLoadtestClient {
+	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
@@ -84,9 +85,24 @@ func receiveHandler(client *Client) {
 			return
 		}
 
+		receivedAt := time.Now()
+
 		message, err := chat.ParseMessage(data)
 		if err != nil {
 			continue
+		}
+
+		// If the client was the sender and the loadtest mode is activated, there will be added a new message event
+		// with the metadata of this message.
+		if message.Sender == client.id && client.IsLoadTestClient {
+			var msgEventEntry = MessageEventEntry{
+				ClientId:  client.id,
+				MessageId: message.MessageId,
+				Timestamp: receivedAt,
+				Type:      Received,
+			}
+			client.MsgEvents <- &msgEventEntry
+			return
 		}
 
 		log.Printf("%v", message)
@@ -96,15 +112,19 @@ func receiveHandler(client *Client) {
 // Handles outgoing ws messages
 func sendHandler(client *Client) {
 	defer client.wsConnection.Close()
+
+	// Each message has an id to be able to follow the message in the message flow.
+	var messageId uint64 = 1
+
 	for {
 		var text string
-		if client.IsLoadtestClient {
+		if client.IsLoadTestClient {
 			time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
 			// The string "a" is exactly one byte. When we want to send a message with a specific byte size we can
 			// repeat the string to reach the message size we want to have-
 			text = strings.Repeat("a", client.MsgSize)
 		} else {
-			log.Printf("Please imput the message you want to send:")
+			log.Printf("Please input the message you want to send:")
 			input, err := consoleReader.ReadString('\n')
 			// convert CRLF to LF
 			text = strings.Replace(input, "\n", "", -1)
@@ -115,9 +135,10 @@ func sendHandler(client *Client) {
 		}
 
 		message := chat.Message{
-			Text:   text,
-			Sender: client.id,
-			SentAt: time.Now(),
+			MessageId: messageId,
+			Text:      text,
+			Sender:    client.id,
+			SentAt:    time.Now(),
 		}
 
 		data, err := message.ToJSON()
@@ -125,10 +146,24 @@ func sendHandler(client *Client) {
 			continue
 		}
 
+		ts := time.Now()
+
 		err = client.wsConnection.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
 			log.Println("Error while sending message:", err)
 			return
 		}
+
+		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+		if client.IsLoadTestClient {
+			var msgEventEntry = MessageEventEntry{
+				ClientId:  client.id,
+				MessageId: message.MessageId,
+				Timestamp: ts,
+				Type:      Sent,
+			}
+			client.MsgEvents <- &msgEventEntry
+		}
+		messageId++
 	}
 }
