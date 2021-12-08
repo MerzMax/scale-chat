@@ -14,6 +14,7 @@ RUN adduser -S app
 USER app
 
 COPY --from=builder /app/out/server ./
+COPY --from=builder /app/server/demo.html ./demo.html
 
 EXPOSE 8080
 ENTRYPOINT ["./server"]
