@@ -98,8 +98,8 @@ func receiveHandler(client *Client) {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
 				MessageId: message.MessageID,
-				TimeStamp: receivedAt,
-				Type: Received,
+				Timestamp: receivedAt,
+				Type:      Received,
 			}
 			client.MessageEvents <- msgEventEntry
 		} else {
@@ -158,8 +158,8 @@ func sendHandler(client *Client) {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
 				MessageId: message.MessageID,
-				TimeStamp: ts,
-				Type: Sent,
+				Timestamp: ts,
+				Type:      Sent,
 			}
 			client.MessageEvents <- msgEventEntry
 		}

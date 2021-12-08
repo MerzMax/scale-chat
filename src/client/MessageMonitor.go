@@ -20,7 +20,7 @@ type MessageEventEntry struct {
 	MessageId uint64
 	ClientId  string
 	Type      Type
-	TimeStamp time.Time
+	Timestamp time.Time
 }
 
 func (m MessageEventEntry) ConvertToStringArray() []string {
@@ -28,6 +28,6 @@ func (m MessageEventEntry) ConvertToStringArray() []string {
 		strconv.FormatUint(m.MessageId, 10),
 		m.ClientId,
 		m.Type.String(),
-		strconv.FormatUint(uint64(m.TimeStamp.UnixMicro()), 10),
+		strconv.FormatUint(uint64(m.Timestamp.UnixMicro()), 10),
 	}
 }
