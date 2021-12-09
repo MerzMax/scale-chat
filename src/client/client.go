@@ -2,18 +2,22 @@ package client
 
 import (
 	"bufio"
+	"context"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"os"
 	"scale-chat/chat"
 	"strings"
+	"sync"
 	"time"
 )
 
 var consoleReader = bufio.NewReader(os.Stdin)
 
 type Client struct {
+	Context          context.Context
+	WaitGroup        *sync.WaitGroup
 	wsConnection     websocket.Conn
 	id               string
 	CloseConnection  chan os.Signal
@@ -52,28 +56,24 @@ func (client *Client) Start() error {
 	// Start Goroutine that sends a message every second
 	go sendHandler(client)
 
-	for {
-		select {
-		case s := <-client.CloseConnection:
-			log.Printf("Closing connection... Reason: %s", s)
+	// Waiting for shutdown...
+	<-client.Context.Done()
 
-			// Closing the connection gracefully
-			err := wsConnection.WriteMessage(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Println("Error while closing the ws connection gracefully: ", err)
-				return err
-			}
+	log.Println("Got interrupted, closing connection...")
 
-			// Timeout for connection close
-			select {
-			case <-time.After(time.Second):
-				log.Println("Terminating. Timeout for connection close.")
-			}
-			return nil
-		}
+	// Closing the connection gracefully
+	err = wsConnection.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		log.Println("Error while closing the ws connection gracefully: ", err)
+		return err
 	}
+
+	// TODO
+	client.WaitGroup.Done()
+
+	return nil
 }
 
 // Handles incoming ws messages
