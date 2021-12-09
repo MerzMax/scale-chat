@@ -82,6 +82,12 @@ func (client *Client) Start() error {
 		return err
 	}
 
+	err = wsConnection.Close()
+	if err != nil {
+		log.Println("Cannot close websocket connection", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -89,20 +95,34 @@ func (client *Client) Start() error {
 func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 
+	incomingMessages := make(chan *[]byte)
+
+	// Convert blocking ReadMessage call into channel
+	go func() {
+		for {
+			_, data, err := client.wsConnection.ReadMessage()
+			if err != nil {
+				close(incomingMessages)
+				return
+			}
+
+			incomingMessages <- &data
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			_, data, err := client.wsConnection.ReadMessage()
-			if err != nil {
-				log.Println("Error while receiving message:", err)
+		case data, ok := <-incomingMessages:
+			if !ok {
+				log.Println("incomingMessages channel was closed")
 				return
 			}
 
 			receivedAt := time.Now()
 
-			message, err := chat.ParseMessage(data)
+			message, err := chat.ParseMessage(*data)
 			if err != nil {
 				continue
 			}
@@ -117,7 +137,6 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 					Type:      Received,
 				}
 				client.MsgEvents <- &msgEventEntry
-				return
 			}
 
 			log.Printf("%v", message)
