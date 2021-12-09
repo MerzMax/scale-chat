@@ -29,6 +29,8 @@ type Client struct {
 }
 
 func (client *Client) Start() error {
+	defer client.WaitGroup.Done()
+
 	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
@@ -80,8 +82,6 @@ func (client *Client) Start() error {
 		return err
 	}
 
-	client.WaitGroup.Done()
-
 	return nil
 }
 
@@ -128,7 +128,6 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 // Handles outgoing ws messages
 func (client *Client) sendHandler(ctx context.Context, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
-	//defer client.wsConnection.Close()
 
 	// Each message has an id to be able to follow the message in the message flow.
 	var messageId uint64 = 1
