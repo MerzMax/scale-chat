@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
@@ -8,8 +9,10 @@ import (
 )
 
 type Client struct {
-	wsConn   *websocket.Conn
-	outgoing chan *MessageWrapper
+	Id         uuid.UUID
+	wsConn     *websocket.Conn
+	outgoing   chan *MessageWrapper
+	unregister chan *Client
 }
 
 type MessageWrapper struct {
@@ -17,27 +20,44 @@ type MessageWrapper struct {
 	processingTimer *prometheus.Timer
 }
 
+func CreateClient(wsConn *websocket.Conn, outgoing chan *MessageWrapper, unregister chan *Client) (*Client, error) {
+	id, err := uuid.NewUUID()
+	if err != nil {
+		log.Println("Cannot generate UUID")
+		return nil, err
+	}
+	return &Client{
+		Id: id,
+		wsConn: wsConn,
+		outgoing: outgoing,
+		unregister: unregister,
+	}, nil
+}
+
 func (client *Client) HandleOutgoing() {
 	defer func() {
-		err := client.wsConn.Close()
-		if err != nil {
-			log.Println("Cannot close WebSocket", err)
-			return
-		}
+		client.unregister <- client
 	}()
+	//defer func() {
+	//	_ = client.wsConn.WriteMessage(websocket.CloseMessage, []byte{})
+	//	err := client.wsConn.Close()
+	//	if err != nil {
+	//		log.Println("Cannot close WebSocket", err)
+	//		return
+	//	}
+	//}()
 
 	for {
 		select {
-		case wrapper := <-client.outgoing:
-			data, err := wrapper.message.ToJSON()
-			if err != nil {
-				continue
+		case wrapper, ok := <-client.outgoing:
+			if !ok {
+				return
 			}
 
-			err = client.wsConn.WriteMessage(websocket.TextMessage, data)
+			err := client.wsConn.WriteJSON(wrapper.message)
 			if err != nil {
 				log.Println("Cannot send message via WebSocket", err)
-				continue
+				return
 			}
 
 			wrapper.processingTimer.ObserveDuration()
@@ -48,18 +68,22 @@ func (client *Client) HandleOutgoing() {
 
 func (client *Client) HandleIncoming(broadcast chan *MessageWrapper) {
 	defer func() {
-		err := client.wsConn.Close()
-		if err != nil {
-			log.Println("Cannot close WebSocket", err)
-			return
-		}
+		client.unregister <- client
 	}()
+	//defer func() {
+	//	client.unregister <- client
+	//
+	//	err := client.wsConn.Close()
+	//	if err != nil {
+	//		log.Println("Cannot close WebSocket", err)
+	//	}
+	//}()
 
 	for {
 		_, data, err := client.wsConn.ReadMessage()
 		if err != nil {
 			log.Println("Error during reading message:", err)
-			break
+			return
 		}
 
 		timer := prometheus.NewTimer(MessageProcessingTime)

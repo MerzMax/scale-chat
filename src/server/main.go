@@ -18,6 +18,7 @@ var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
 var broadcast = make(chan *MessageWrapper)
+var unregister = make(chan *Client)
 
 func main() {
 	go broadcastMessages()
@@ -63,7 +64,8 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	outgoing := make(chan *MessageWrapper) // TODO: Add buffer?
-	client := Client{wsConn: wsConn, outgoing: outgoing}
+
+	client := {wsConn: wsConn, outgoing: outgoing, unregister: unregister}
 	clients = append(clients, &client)
 
 	go client.HandleOutgoing()
@@ -85,6 +87,15 @@ func broadcastMessages() {
 			for _, client := range clients {
 				client.outgoing <- wrapper
 			}
+		}
+	}
+}
+
+func unregisterClients() {
+	for {
+		select {
+		case client := <- unregister:
+			clients
 		}
 	}
 }
