@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
@@ -15,13 +16,15 @@ var upgrader = websocket.Upgrader{
 }
 
 var chatHistory = make([]*chat.Message, 0)
-var clients = make([]*Client, 0)
+var clients = make(map[uuid.UUID]Client, 0)
 
 var broadcast = make(chan *MessageWrapper)
-var unregister = make(chan *Client)
+var unregisterClient = make(chan *Client)
+var registerClient = make(chan *Client)
 
 func main() {
 	go broadcastMessages()
+	go manageClients()
 
 	// Register separate ServeMux instances for public endpoints and internal metrics
 	publicMux := http.NewServeMux()
@@ -63,10 +66,8 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	outgoing := make(chan *MessageWrapper) // TODO: Add buffer?
-
-	client := {wsConn: wsConn, outgoing: outgoing, unregister: unregister}
-	clients = append(clients, &client)
+	client, _ := CreateClient(wsConn, make(chan *MessageWrapper), unregisterClient)
+	clients[client.Id] = *client
 
 	go client.HandleOutgoing()
 	go client.HandleIncoming(broadcast)
@@ -86,16 +87,33 @@ func broadcastMessages() {
 			chatHistory = append(chatHistory, wrapper.message)
 			for _, client := range clients {
 				client.outgoing <- wrapper
+				// TODO: Does not work .. Why???
+				//select {
+				//case client.outgoing <- wrapper:
+				//default:
+				//	close(client.outgoing)
+				//	delete(clients, client.Id)
+				//}
 			}
 		}
 	}
 }
 
-func unregisterClients() {
+// Listens for clients on the registerClient and the unregisterClient channels and registers or unregisters the
+// transferred client
+func manageClients() {
 	for {
 		select {
-		case client := <- unregister:
-			clients
+		case client := <-registerClient:
+			log.Println("Registering new client with id: " + client.Id.String())
+			clients[client.Id] = *client
+		case client := <-unregisterClient:
+			log.Println("Unregister client with id: " + client.Id.String())
+			if _, ok := clients[client.Id]; ok {
+				delete(clients, client.Id)
+				close(client.outgoing)
+				log.Println("Client with id: " + client.Id.String() + " was unregistered successfully")
+			}
 		}
 	}
 }

@@ -27,30 +27,24 @@ func CreateClient(wsConn *websocket.Conn, outgoing chan *MessageWrapper, unregis
 		return nil, err
 	}
 	return &Client{
-		Id: id,
-		wsConn: wsConn,
-		outgoing: outgoing,
+		Id:         id,
+		wsConn:     wsConn,
+		outgoing:   outgoing,
 		unregister: unregister,
 	}, nil
 }
 
 func (client *Client) HandleOutgoing() {
 	defer func() {
-		client.unregister <- client
+		client.wsConn.Close()
 	}()
-	//defer func() {
-	//	_ = client.wsConn.WriteMessage(websocket.CloseMessage, []byte{})
-	//	err := client.wsConn.Close()
-	//	if err != nil {
-	//		log.Println("Cannot close WebSocket", err)
-	//		return
-	//	}
-	//}()
 
 	for {
 		select {
 		case wrapper, ok := <-client.outgoing:
 			if !ok {
+				log.Println("The outgoing channel was closed by the server.")
+				client.wsConn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -68,16 +62,9 @@ func (client *Client) HandleOutgoing() {
 
 func (client *Client) HandleIncoming(broadcast chan *MessageWrapper) {
 	defer func() {
-		client.unregister <- client
+		unregisterClient <- client
+		client.wsConn.Close()
 	}()
-	//defer func() {
-	//	client.unregister <- client
-	//
-	//	err := client.wsConn.Close()
-	//	if err != nil {
-	//		log.Println("Cannot close WebSocket", err)
-	//	}
-	//}()
 
 	for {
 		_, data, err := client.wsConn.ReadMessage()
