@@ -31,7 +31,3 @@ func (m MessageEventEntry) ConvertToStringArray() []string {
 					m.Type.String(),
 					strconv.FormatUint(uint64(m.TimeStamp.UnixMicro()), 10)}
 }
-
-
-
-

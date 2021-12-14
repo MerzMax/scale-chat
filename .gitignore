@@ -1,7 +1,8 @@
 .DS_Store
 .idea/
+.env
 src/server/server
 src/client/client
-src/loadtest-client/loadtest-client
+src/load-test-client/load-test-client
 
 src/loadtest-client/loadtest-results

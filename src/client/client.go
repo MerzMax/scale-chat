@@ -18,14 +18,14 @@ type Client struct {
 	id               string
 	CloseConnection  chan os.Signal
 	ServerUrl        string
-	IsLoadtestClient bool
+	IsLoadTestClient bool
 	MsgSize          int
 	MsgFrequency     int
-	MessageEvents    chan MessageEventEntry
+	MsgEvents        chan *MessageEventEntry
 }
 
 func (client *Client) Start() error {
-	if client.IsLoadtestClient {
+	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
 		log.Printf("Client started in loadtest mode. Please input your id: ")
@@ -101,10 +101,11 @@ func receiveHandler(client *Client) {
 				TimeStamp: receivedAt,
 				Type: Received,
 			}
-			client.MessageEvents <- msgEventEntry
-		} else {
-			log.Printf("%v", message)
+			client.MsgEvents <- &msgEventEntry
+			return
 		}
+
+		log.Printf("%v", message)
 	}
 }
 
@@ -117,7 +118,7 @@ func sendHandler(client *Client) {
 
 	for {
 		var text string
-		if client.IsLoadtestClient {
+		if client.IsLoadTestClient {
 			time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
 			// The string "a" is exactly one byte. When we want to send a message with a specific byte size we can
 			// repeat the string to reach the message size we want to have-
@@ -134,7 +135,7 @@ func sendHandler(client *Client) {
 		}
 
 		message := chat.Message{
-			MessageID: messageId,
+			MessageId: messageId,
 			Text:      text,
 			Sender:    client.id,
 			SentAt:    time.Now(),
@@ -154,7 +155,7 @@ func sendHandler(client *Client) {
 		}
 
 		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
-		if client.IsLoadtestClient {
+		if client.IsLoadTestClient {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
 				SenderId: client.id,
@@ -162,7 +163,7 @@ func sendHandler(client *Client) {
 				TimeStamp: ts,
 				Type: Sent,
 			}
-			client.MessageEvents <- msgEventEntry
+			client.MsgEvents <- &msgEventEntry
 		}
 		messageId++
 	}

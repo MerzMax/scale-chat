@@ -2,24 +2,50 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"scale-chat/chat"
 )
 
-var upgrader = websocket.Upgrader{} // use default options
+// WebSocket connection configuration
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  128,
+	WriteBufferSize: 128,
+}
+
 var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
-var broadcast = make(chan *chat.Message)
+var broadcast = make(chan *MessageWrapper)
 
 func main() {
 	go broadcastMessages()
 
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/ws", wsHandler)
-	http.HandleFunc("/", demoHandler)
-	err := http.ListenAndServe(":8080", nil)
+	// Register separate ServeMux instances for public endpoints and internal metrics
+	publicMux := http.NewServeMux()
+	internalMux := http.NewServeMux()
+
+	// Register public endpoints
+	publicMux.HandleFunc("/", demoHandler)
+	publicMux.HandleFunc("/ws", wsHandler)
+
+	// Register Prometheus endpoint
+	internalMux.Handle("/metrics", promhttp.Handler())
+
+	// Initiate Prometheus monitoring
+	InitMonitoring()
+
+	// Listen on internal metrics port
+	go func() {
+		err := http.ListenAndServe(":8081", internalMux)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// Listen on public endpoint port
+	err := http.ListenAndServe(":8080", publicMux)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +62,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	outgoing := make(chan *chat.Message) // TODO: Add buffer?
+	outgoing := make(chan *MessageWrapper) // TODO: Add buffer?
 	client := Client{wsConn: wsConn, outgoing: outgoing}
 	clients = append(clients, &client)
 
@@ -44,24 +70,20 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	go client.HandleIncoming(broadcast)
 }
 
-// Event handler for the /hello endpoint
-func hello(writer http.ResponseWriter, req *http.Request) {
-	log.Println("/hello endpoint requested")
-	writer.Write([]byte("Hello World!"))
-}
-
+// Handles the / endpoint and serves the demo html chat client
 func demoHandler(writer http.ResponseWriter, req *http.Request) {
 	log.Println("serving demo HTML")
 	http.ServeFile(writer, req, "./demo.html")
 }
 
+// Listens for messages on the broadcast channel and sends them to all connected clients
 func broadcastMessages() {
 	for {
 		select {
-		case message := <-broadcast:
-			chatHistory = append(chatHistory, message)
+		case wrapper := <-broadcast:
+			chatHistory = append(chatHistory, wrapper.message)
 			for _, client := range clients {
-				client.outgoing <- message
+				client.outgoing <- wrapper
 			}
 		}
 	}
