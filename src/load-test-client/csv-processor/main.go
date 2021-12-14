@@ -16,7 +16,7 @@ func main() {
 	// READ IN FILES
 	var fileNames []string
 
-	root := "../loadtest-results"
+	root := "../load-test-results"
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		fileNames = append(fileNames, path)
 		return nil
@@ -39,33 +39,38 @@ func main() {
 	}
 
 	// CALCULATE RTT for each message
-	roundTripTimeEntries := make(map[string][]MessageLatencyEntry)
+
+	// key = File name
+	roundTripTimeEntriesMap := make(map[string][]MessageLatencyEntry)
 
 	for key, data := range fileData {
 		rttEntries := calculateMessageLatency(data)
-		roundTripTimeEntries[key] = rttEntries
+		roundTripTimeEntriesMap[key] = rttEntries
+
+		//PlotRtts(key, &rttEntries)
 	}
 
-	log.Println(roundTripTimeEntries)
+	//log.Println(roundTripTimeEntriesMap)
 
-	log.Println("---------------------")
-	log.Println("")
-	log.Println("COMPLETED")
 	log.Println("")
 	log.Println("---------------------")
+	log.Println("COMPLETED CALCULATIONS")
+	log.Println("---------------------")
+	log.Println("")
 }
 
 type MessageLatencyEntry struct {
-	SenderId  		string
-	MessageId 		uint64
-	RttInNs       	int64
-	LatenciesInMs 	[]int64
+	SenderMsgEvent client.MessageEventEntry
+	SenderId       string
+	MessageId      uint64
+	RttInNs        int64
+	LatenciesInMs  []int64
 }
 
 // Filter a list of filenames. All csv files will be returned
 func filterFileNames(files []string) []string {
 	var res []string
-	for _, file := range files{
+	for _, file := range files {
 		if strings.HasSuffix(file, ".csv") {
 			res = append(res, file)
 		}
@@ -158,8 +163,9 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 	for _, sentMsgEventEntry := range sentMsgEventEntries {
 
 		msgLatency := MessageLatencyEntry{
-			MessageId: sentMsgEventEntry.MessageId,
-			SenderId:  sentMsgEventEntry.ClientId,
+			MessageId:      sentMsgEventEntry.MessageId,
+			SenderId:       sentMsgEventEntry.ClientId,
+			SenderMsgEvent: sentMsgEventEntry,
 		}
 
 		for _, receivedMsgEventEntry := range receivedMsgEventEntries {
@@ -168,7 +174,7 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 					msgLatency.RttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
 					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, msgLatency.RttInNs)
 				} else {
-					latency :=  receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
+					latency := receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
 					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, latency)
 				}
 			}
@@ -179,4 +185,3 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 
 	return messageLatencies
 }
-

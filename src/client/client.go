@@ -93,13 +93,13 @@ func receiveHandler(client *Client) {
 		}
 
 		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
-		if client.IsLoadtestClient {
+		if client.IsLoadTestClient {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
-				SenderId: message.Sender,
-				MessageId: message.MessageID,
+				SenderId:  message.Sender,
+				MessageId: message.MessageId,
 				TimeStamp: receivedAt,
-				Type: Received,
+				Type:      Received,
 			}
 			client.MsgEvents <- &msgEventEntry
 			return
@@ -158,10 +158,10 @@ func sendHandler(client *Client) {
 		if client.IsLoadTestClient {
 			var msgEventEntry = MessageEventEntry{
 				ClientId:  client.id,
-				SenderId: client.id,
-				MessageId: message.MessageID,
+				SenderId:  client.id,
+				MessageId: message.MessageId,
 				TimeStamp: ts,
-				Type: Sent,
+				Type:      Sent,
 			}
 			client.MsgEvents <- &msgEventEntry
 		}
