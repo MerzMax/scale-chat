@@ -52,7 +52,7 @@ func main() {
 		rttEntries := calculateMessageLatency(data)
 		roundTripTimeEntriesMap[key] = rttEntries
 
-		PlotRtts(key, &rttEntries)
+		Plot(key, &rttEntries)
 	}
 
 	//log.Println(roundTripTimeEntriesMap)
