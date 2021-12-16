@@ -5,4 +5,5 @@ src/server/server
 src/client/client
 src/load-test-client/load-test-client
 
-src/loadtest-client/loadtest-results
+src/load-test-client/load-test-results/*.csv
+src/load-test-client/csv-processor/load-test-graphics/*.html

@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
+const root = "../load-test-results/"
+const outputDir = "./load-test-graphics/"
+
 func main() {
 	// READ IN FILES
 	var fileNames []string
 
-	root := "../load-test-results"
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		fileNames = append(fileNames, path)
 		return nil
@@ -35,7 +37,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fileData[fileName] = res
+
+		log.Println(strings.TrimPrefix(strings.TrimSuffix(fileName, ".csv"), root))
+
+		fileData[strings.TrimPrefix(strings.TrimSuffix(fileName, ".csv"), root)] = res
 	}
 
 	// CALCULATE RTT for each message
@@ -47,7 +52,7 @@ func main() {
 		rttEntries := calculateMessageLatency(data)
 		roundTripTimeEntriesMap[key] = rttEntries
 
-		//PlotRtts(key, &rttEntries)
+		PlotRtts(key, &rttEntries)
 	}
 
 	//log.Println(roundTripTimeEntriesMap)
@@ -64,7 +69,7 @@ type MessageLatencyEntry struct {
 	SenderId       string
 	MessageId      uint64
 	RttInNs        int64
-	LatenciesInMs  []int64
+	LatenciesInNs  []int64
 }
 
 // Filter a list of filenames. All csv files will be returned
@@ -80,6 +85,9 @@ func filterFileNames(files []string) []string {
 
 // Parses a csv file at the filepath and convert the data in an array of MessageEventEntry structs
 func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
+
+	log.Println("parsing CSV file: " + filepath)
+
 	// Open the csv file
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -172,10 +180,10 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 			if sentMsgEventEntry.MessageId == receivedMsgEventEntry.MessageId {
 				if sentMsgEventEntry.SenderId == receivedMsgEventEntry.SenderId {
 					msgLatency.RttInNs = receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
-					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, msgLatency.RttInNs)
+					msgLatency.LatenciesInNs = append(msgLatency.LatenciesInNs, msgLatency.RttInNs)
 				} else {
 					latency := receivedMsgEventEntry.TimeStamp.Sub(sentMsgEventEntry.TimeStamp).Nanoseconds()
-					msgLatency.LatenciesInMs = append(msgLatency.LatenciesInMs, latency)
+					msgLatency.LatenciesInNs = append(msgLatency.LatenciesInNs, latency)
 				}
 			}
 		}
