@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
+	"github.com/montanaflynn/stats"
 	"io"
+	"log"
 	"os"
 )
 
@@ -95,6 +98,8 @@ func plotAverageLatency(fileName string, entries *[]MessageLatencyEntry, xValues
 	// Put data into instance
 	line.SetXAxis(xValues).
 		AddSeries("average latency", generateYValuesAvgLatency(entries)).
+		AddSeries("99 percentile", generateYValuesPercentilesLatency(entries, 99)).
+		AddSeries("75 percentile", generateYValuesPercentilesLatency(entries, 75)).
 		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
 
 	return line
@@ -113,6 +118,33 @@ func generateYValuesAvgLatency(entries *[]MessageLatencyEntry) []opts.LineData {
 
 		values[i] = opts.LineData{
 			Value: total / int64(len(entry.LatenciesInNs)),
+		}
+	}
+
+	return values
+}
+
+// PERCENTILES
+
+func generateYValuesPercentilesLatency(entries *[]MessageLatencyEntry, percentile float64) []opts.LineData {
+	values := make([]opts.LineData, len(*entries))
+
+	for i, entry := range *entries {
+
+		var f []float64
+		for _, latency := range entry.LatenciesInNs {
+			f = append(f, float64(latency))
+		}
+
+		data := stats.LoadRawData(f)
+		p99, err := stats.Percentile(data, percentile)
+		if err != nil {
+			log.Println("cant calculate percentile")
+			log.Fatalln(err)
+		}
+
+		values[i] = opts.LineData{
+			Value: fmt.Sprint(p99),
 		}
 	}
 
