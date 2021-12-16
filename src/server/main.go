@@ -14,7 +14,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	go broadcastMessages()
+	go BroadcastMessages()
 
 	// Register separate ServeMux instances for public endpoints and internal metrics
 	publicMux := http.NewServeMux()
