@@ -95,7 +95,7 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 		_, data, err := client.wsConn.ReadMessage()
 		if err != nil {
 			log.Println("Cannot read message on websocket connection:", err)
-			break
+			return
 		}
 
 		timer := prometheus.NewTimer(MessageProcessingTime)
