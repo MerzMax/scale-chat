@@ -13,7 +13,7 @@ import (
 )
 
 const root = "../load-test-results/"
-const outputDir = "./load-test-graphics/"
+const outputDir = root + "graphics/"
 
 func main() {
 	// READ IN FILES
