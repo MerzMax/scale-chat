@@ -140,7 +140,14 @@ func plotLatency(fileName string, entries *[]MessageLatencyEntry, xValues *[]str
 		AddSeries("average", generateYValuesAvgLatency(entries)).
 		AddSeries("99 percentile", generateYValuesPercentilesLatency(entries, 99)).
 		AddSeries("75 percentile", generateYValuesPercentilesLatency(entries, 75)).
-		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
+		SetSeriesOptions(
+			charts.WithMarkPointNameTypeItemOpts(
+				opts.MarkPointNameTypeItem{Name: "Maximum", Type: "max"},
+				opts.MarkPointNameTypeItem{Name: "Minimum", Type: "min"},
+			),
+			charts.WithMarkPointStyleOpts(
+				opts.MarkPointStyle{Label: &opts.Label{Show: true}}),
+		)
 
 	return line
 }
