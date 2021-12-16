@@ -55,13 +55,11 @@ func main() {
 		Plot(key, &rttEntries)
 	}
 
-	//log.Println(roundTripTimeEntriesMap)
-
 	log.Println("")
-	log.Println("---------------------")
-	log.Println("COMPLETED CALCULATIONS")
-	log.Println("---------------------")
-	log.Println("")
+	log.Println("------------------------------------------------------------------------------------")
+	log.Println("COMPLETED")
+	log.Println("Files will be stored at: " + outputDir)
+	log.Println("------------------------------------------------------------------------------------")
 }
 
 type MessageLatencyEntry struct {

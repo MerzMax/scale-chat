@@ -6,27 +6,33 @@ import (
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/montanaflynn/stats"
-	"io"
 	"log"
 	"os"
 )
 
 func Plot(fileName string, entries *[]MessageLatencyEntry) {
-	page := components.NewPage()
-
+	// Generate x values (identical for all charts)
 	xValues := generateXValuesTimeSeries(entries)
 
-	page.AddCharts(
-		plotRtts(fileName, entries, &xValues),
-		plotAverageLatency(fileName, entries, &xValues),
-	)
+	// Generate charts and save them in files
+	rttPlot := plotRtts(fileName, entries, &xValues)
+	writeLineChartToFile(rttPlot, fileName, "_line-rtt")
 
-	f, err := os.Create(outputDir + fileName + "_line-rtt.html")
+	latenciesPlot := plotLatency(fileName, entries, &xValues)
+	writeLineChartToFile(latenciesPlot, fileName, "_line-latency")
+
+	// Save all plots in one file
+	pageWithAll := components.NewPage()
+	pageWithAll.AddCharts(
+		rttPlot,
+		latenciesPlot,
+	)
+	f, err := os.Create(outputDir + fileName + "_all.html")
 	if err != nil {
 		panic(err)
 	}
-
-	page.Render(io.MultiWriter(f))
+	pageWithAll.Render(f)
+	log.Println("Created new chart for: " + fileName + "_all")
 }
 
 func generateXValuesTimeSeries(entries *[]MessageLatencyEntry) []string {
@@ -36,6 +42,18 @@ func generateXValuesTimeSeries(entries *[]MessageLatencyEntry) []string {
 	}
 
 	return values
+}
+
+func writeLineChartToFile(line *charts.Line, fileName string, suffix string) {
+	f, err := os.Create(outputDir + fileName + suffix + ".html")
+	if err != nil {
+		log.Fatalln("Could not create file.", err)
+	}
+	err = line.Render(f)
+	if err != nil {
+		log.Fatalln("Could not render line chart to file.", err)
+	}
+	log.Println("Created new chart for: " + fileName + suffix)
 }
 
 // RTT
@@ -55,11 +73,26 @@ func plotRtts(fileName string, entries *[]MessageLatencyEntry, xValues *[]string
 			AxisLabel: &opts.AxisLabel{
 				Show: true,
 			},
+		}),
+		charts.WithInitializationOpts(opts.Initialization{
+			Width:  "1200px",
+			Height: "600px",
+		}),
+		charts.WithLegendOpts(opts.Legend{
+			Show:    true,
+			Padding: 40,
 		}))
 
 	line.SetXAxis(xValues).
-		AddSeries("RTT", generateYValuesRtt(entries)).
-		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
+		AddSeries("round trip time", generateYValuesRtt(entries)).
+		SetSeriesOptions(
+			charts.WithMarkPointNameTypeItemOpts(
+				opts.MarkPointNameTypeItem{Name: "Maximum", Type: "max"},
+				opts.MarkPointNameTypeItem{Name: "Minimum", Type: "min"},
+			),
+			charts.WithMarkPointStyleOpts(
+				opts.MarkPointStyle{Label: &opts.Label{Show: true}}),
+		)
 
 	return line
 }
@@ -78,12 +111,12 @@ func generateYValuesRtt(entries *[]MessageLatencyEntry) []opts.LineData {
 
 // AVERAGE LATENCY
 
-func plotAverageLatency(fileName string, entries *[]MessageLatencyEntry, xValues *[]string) *charts.Line {
+func plotLatency(fileName string, entries *[]MessageLatencyEntry, xValues *[]string) *charts.Line {
 	line := charts.NewLine()
 	// set some global options like Title/Legend/ToolTip or anything else
 	line.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: "The average latency of all messages (" + fileName + ")",
+			Title: "The latency of all messages (" + fileName + ")",
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
 			Name: "Time[date]",
@@ -93,11 +126,18 @@ func plotAverageLatency(fileName string, entries *[]MessageLatencyEntry, xValues
 			AxisLabel: &opts.AxisLabel{
 				Show: true,
 			},
+		}),
+		charts.WithInitializationOpts(opts.Initialization{
+			Width:  "1200px",
+			Height: "600px",
+		}),
+		charts.WithLegendOpts(opts.Legend{
+			Show:    true,
+			Padding: 40,
 		}))
 
-	// Put data into instance
 	line.SetXAxis(xValues).
-		AddSeries("average latency", generateYValuesAvgLatency(entries)).
+		AddSeries("average", generateYValuesAvgLatency(entries)).
 		AddSeries("99 percentile", generateYValuesPercentilesLatency(entries, 99)).
 		AddSeries("75 percentile", generateYValuesPercentilesLatency(entries, 75)).
 		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
@@ -139,8 +179,7 @@ func generateYValuesPercentilesLatency(entries *[]MessageLatencyEntry, percentil
 		data := stats.LoadRawData(f)
 		p99, err := stats.Percentile(data, percentile)
 		if err != nil {
-			log.Println("cant calculate percentile")
-			log.Fatalln(err)
+			log.Fatalln("Can't calculate percentile: ", err)
 		}
 
 		values[i] = opts.LineData{
