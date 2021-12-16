@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"scale-chat/client"
+	"sync"
 	"time"
 )
 
@@ -29,10 +31,6 @@ func main() {
 
 	flag.Parse()
 
-	// Listen to system interrupts -> program will be stopped
-	sysInterrupt := make(chan os.Signal, 1)
-	signal.Notify(sysInterrupt, os.Interrupt)
-
 	var msgEvents chan *client.MessageEventEntry
 
 	// If the application isn't started in load test mode there is just one client that will be started.
@@ -44,6 +42,9 @@ func main() {
 		go processMessageEvents(msgEvents)
 	}
 
+	waitGroup := &sync.WaitGroup{}
+	cancelFuncs := make([]*context.CancelFunc, *numOfClients)
+
 	// Create numOfClients clients that can chat
 	for i := 0; i < *numOfClients; i++ {
 		log.Printf("Creating client number: %v / %v", i+1, *numOfClients)
@@ -52,8 +53,13 @@ func main() {
 		closeConnection := make(chan os.Signal, 1)
 		signal.Notify(closeConnection, os.Interrupt)
 
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		cancelFuncs[i] = &cancelFunc
+
 		go func() {
 			chatClient := client.Client{
+				Context:          ctx,
+				WaitGroup:        waitGroup,
 				ServerUrl:        *serverUrl,
 				CloseConnection:  closeConnection,
 				IsLoadTestClient: *loadTest,
@@ -69,10 +75,20 @@ func main() {
 		}()
 	}
 
-	select {
-	case <-sysInterrupt:
-		log.Println("SYS INTERRUPT")
+	waitGroup.Add(*numOfClients)
+
+	// Listen to system interrupts -> program will be stopped
+	sysInterrupt := make(chan os.Signal, 1)
+	signal.Notify(sysInterrupt, os.Interrupt)
+
+	<-sysInterrupt
+	log.Println("Shutting down clients...")
+
+	for _, cancelFunc := range cancelFuncs {
+		(*cancelFunc)()
 	}
+	waitGroup.Wait()
+	log.Println("All clients finished, shutting down now")
 }
 
 // The function processes MessageEventEntries and writes a csv with the data collected

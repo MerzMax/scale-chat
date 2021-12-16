@@ -2,18 +2,22 @@ package client
 
 import (
 	"bufio"
+	"context"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"os"
 	"scale-chat/chat"
 	"strings"
+	"sync"
 	"time"
 )
 
 var consoleReader = bufio.NewReader(os.Stdin)
 
 type Client struct {
+	Context          context.Context
+	WaitGroup        *sync.WaitGroup
 	wsConnection     websocket.Conn
 	id               string
 	CloseConnection  chan os.Signal
@@ -25,6 +29,8 @@ type Client struct {
 }
 
 func (client *Client) Start() error {
+	defer client.WaitGroup.Done()
+
 	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
@@ -46,125 +52,159 @@ func (client *Client) Start() error {
 
 	client.wsConnection = *wsConnection
 
+	waitGroup := &sync.WaitGroup{}
+	waitGroup.Add(2)
+
 	// Start Goroutine that listens on incoming messages
-	go receiveHandler(client)
+	receiveCtx, receiveCancelFunc := context.WithCancel(context.Background())
+	go client.receiveHandler(receiveCtx, waitGroup)
 
 	// Start Goroutine that sends a message every second
-	go sendHandler(client)
+	sendCtx, sendCancelFunc := context.WithCancel(context.Background())
+	go client.sendHandler(sendCtx, waitGroup)
 
-	for {
-		select {
-		case s := <-client.CloseConnection:
-			log.Printf("Closing connection... Reason: %s", s)
+	// Waiting for shutdown...
+	<-client.Context.Done()
 
-			// Closing the connection gracefully
-			err := wsConnection.WriteMessage(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Println("Error while closing the ws connection gracefully: ", err)
-				return err
-			}
+	log.Println("Client got interrupted, closing connection...")
 
-			// Timeout for connection close
-			select {
-			case <-time.After(time.Second):
-				log.Println("Terminating. Timeout for connection close.")
-			}
-			return nil
-		}
+	sendCancelFunc()
+	receiveCancelFunc()
+
+	waitGroup.Wait()
+
+	// Closing the connection gracefully
+	err = wsConnection.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		log.Println("Error while closing the ws connection gracefully: ", err)
+		return err
 	}
+
+	err = wsConnection.Close()
+	if err != nil {
+		log.Println("Cannot close websocket connection", err)
+		return err
+	}
+
+	return nil
 }
 
 // Handles incoming ws messages
-func receiveHandler(client *Client) {
-	for {
-		_, data, err := client.wsConnection.ReadMessage()
-		if err != nil {
-			log.Println("Error while receiving message:", err)
-			return
-		}
+func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done()
 
-		receivedAt := time.Now()
+	incomingMessages := make(chan *[]byte)
 
-		message, err := chat.ParseMessage(data)
-		if err != nil {
-			continue
-		}
-
-		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
-		if client.IsLoadTestClient {
-			var msgEventEntry = MessageEventEntry{
-				ClientId:  client.id,
-				SenderId:  message.Sender,
-				MessageId: message.MessageId,
-				TimeStamp: receivedAt,
-				Type:      Received,
+	// Convert blocking ReadMessage call into channel
+	go func() {
+		for {
+			_, data, err := client.wsConnection.ReadMessage()
+			if err != nil {
+				close(incomingMessages)
+				return
 			}
-			client.MsgEvents <- &msgEventEntry
-			return
-		}
 
-		log.Printf("%v", message)
+			incomingMessages <- &data
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case data, ok := <-incomingMessages:
+			if !ok {
+				log.Println("incomingMessages channel was closed")
+				return
+			}
+
+			receivedAt := time.Now()
+
+			message, err := chat.ParseMessage(*data)
+			if err != nil {
+				continue
+			}
+
+			// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+			if client.IsLoadTestClient {
+				var msgEventEntry = MessageEventEntry{
+					ClientId:  client.id,
+					SenderId:  message.Sender,
+					MessageId: message.MessageId,
+					TimeStamp: receivedAt,
+					Type:      Received,
+				}
+				client.MsgEvents <- &msgEventEntry
+
+				log.Printf("%v", message)
+			}
+		}
 	}
 }
 
 // Handles outgoing ws messages
-func sendHandler(client *Client) {
-	defer client.wsConnection.Close()
+func (client *Client) sendHandler(ctx context.Context, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done()
 
 	// Each message has an id to be able to follow the message in the message flow.
 	var messageId uint64 = 1
 
 	for {
-		var text string
-		if client.IsLoadTestClient {
-			time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
-			// The string "a" is exactly one byte. When we want to send a message with a specific byte size we can
-			// repeat the string to reach the message size we want to have-
-			text = strings.Repeat("a", client.MsgSize)
-		} else {
-			log.Printf("Please input the message you want to send:")
-			input, err := consoleReader.ReadString('\n')
-			// convert CRLF to LF
-			text = strings.Replace(input, "\n", "", -1)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			var text string
+			if client.IsLoadTestClient {
+				time.Sleep(time.Duration(client.MsgFrequency) * time.Millisecond)
+				// The string "a" is exactly one byte. When we want to send a message with a specific byte size we can
+				// repeat the string to reach the message size we want to have-
+				text = strings.Repeat("a", client.MsgSize)
+			} else {
+				log.Printf("Please input the message you want to send:")
+				input, err := consoleReader.ReadString('\n')
+				// convert CRLF to LF
+				text = strings.Replace(input, "\n", "", -1)
+				if err != nil {
+					log.Printf("Failed to read the input. Try again...")
+					continue
+				}
+			}
+
+			message := chat.Message{
+				MessageId: messageId,
+				Text:      text,
+				Sender:    client.id,
+				SentAt:    time.Now(),
+			}
+
+			data, err := message.ToJSON()
 			if err != nil {
-				log.Printf("Failed to read the input. Try again...")
 				continue
 			}
-		}
 
-		message := chat.Message{
-			MessageId: messageId,
-			Text:      text,
-			Sender:    client.id,
-			SentAt:    time.Now(),
-		}
+			ts := time.Now()
 
-		data, err := message.ToJSON()
-		if err != nil {
-			continue
-		}
-
-		ts := time.Now()
-
-		err = client.wsConnection.WriteMessage(websocket.TextMessage, data)
-		if err != nil {
-			log.Println("Error while sending message:", err)
-			return
-		}
-
-		// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
-		if client.IsLoadTestClient {
-			var msgEventEntry = MessageEventEntry{
-				ClientId:  client.id,
-				SenderId:  client.id,
-				MessageId: message.MessageId,
-				TimeStamp: ts,
-				Type:      Sent,
+			err = client.wsConnection.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				log.Println("Error while sending message:", err)
+				return
 			}
-			client.MsgEvents <- &msgEventEntry
+
+			// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+			if client.IsLoadTestClient {
+				var msgEventEntry = MessageEventEntry{
+					ClientId:  client.id,
+					SenderId:  client.id,
+					MessageId: message.MessageId,
+					TimeStamp: ts,
+					Type:      Sent,
+				}
+				client.MsgEvents <- &msgEventEntry
+			}
+			messageId++
 		}
-		messageId++
 	}
 }
