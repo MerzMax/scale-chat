@@ -7,6 +7,15 @@ services:
       dockerfile: src/server/Dockerfile
     ports:
       - "8080:8080"
+    deploy:
+      resources:
+          limits:
+            cpus: "0.25"
+            memory: 512M
+          reservations:
+            cpus: "0.25"
+            memory: 256M
+
 
   prometheus:
     image: prom/prometheus:v2.31.1
@@ -14,6 +23,8 @@ services:
       - default
     depends_on:
       - cadvisor
+    env_file:
+      - .env
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
