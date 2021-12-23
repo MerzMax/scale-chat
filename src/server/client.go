@@ -19,6 +19,9 @@ type MessageWrapper struct {
 	processingTimer *prometheus.Timer
 }
 
+// messageBufferSize is the buffer size of the incoming and outgoing message channels
+const messageBufferSize = 100
+
 // chatHistory is the history of all chat messages
 var chatHistory = make([]*chat.Message, 0)
 
@@ -26,12 +29,12 @@ var chatHistory = make([]*chat.Message, 0)
 var clients = make([]*Client, 0)
 
 // incoming messages are sent through this channel
-var incoming = make(chan *MessageWrapper)
+var incoming = make(chan *MessageWrapper, messageBufferSize)
 
 // StartClient starts a client's incoming and outgoing message handlers
 // and waits until the connection breaks to remove the client
 func StartClient(wsConn *websocket.Conn) {
-	outgoing := make(chan *MessageWrapper, 100)
+	outgoing := make(chan *MessageWrapper, messageBufferSize)
 
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(2)
