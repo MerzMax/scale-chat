@@ -90,7 +90,7 @@ func filterFilePaths(files []string) []string {
 // Parses a csv file at the filepath and convert the data in an array of MessageEventEntry structs
 func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 
-	log.Println("parsing CSV file: " + filepath)
+	log.Println(trimFilePathAndCsvSuffix(filepath) + ": File will be parsed...")
 
 	// Open the csv file
 	f, err := os.Open(filepath)
