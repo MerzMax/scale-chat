@@ -25,7 +25,6 @@ func main() {
 	// Register separate ServeMux instances for public endpoints and internal metrics
 	publicMux := http.NewServeMux()
 	internalMux := http.NewServeMux()
-	fileMux := http.FileServer(http.Dir("../load-test-client/load-test-results"))
 
 	// Register public endpoints
 	publicMux.HandleFunc("/", demoHandler)
@@ -40,14 +39,6 @@ func main() {
 	// Listen on internal metrics port
 	go func() {
 		err := http.ListenAndServe(":8081", internalMux)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	// Listen on internal file port
-	go func() {
-		err := http.ListenAndServe(":8082", fileMux)
 		if err != nil {
 			log.Fatal(err)
 		}

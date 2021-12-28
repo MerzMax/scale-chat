@@ -25,9 +25,13 @@ type MessageEventEntry struct {
 }
 
 func (m MessageEventEntry) StringArray() []string {
-	return []string{strconv.FormatUint(m.MessageId, 10),
+	return []string{
+		strconv.FormatUint(m.MessageId, 10),
 		m.SenderId,
 		m.ClientId,
 		m.Type.String(),
-		strconv.FormatUint(uint64(m.TimeStamp.UnixMicro()), 10)}
+		strconv.FormatUint(
+			uint64(
+				m.TimeStamp.UnixMicro()),
+			10)}
 }

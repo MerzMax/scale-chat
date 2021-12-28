@@ -157,6 +157,13 @@ func generateYValuesAvgLatency(entries *[]MessageLatencyEntry) []opts.LineData {
 
 	for i, entry := range *entries {
 
+		if len(entry.LatenciesInNs) == 0 {
+			values[i] = opts.LineData{
+				Value: 0,
+			}
+			continue
+		}
+
 		var total int64
 
 		for _, latency := range entry.LatenciesInNs {
@@ -184,13 +191,13 @@ func generateYValuesPercentilesLatency(entries *[]MessageLatencyEntry, percentil
 		}
 
 		data := stats.LoadRawData(f)
-		p99, err := stats.Percentile(data, percentile)
+		result, err := stats.Percentile(data, percentile)
 		if err != nil {
 			log.Fatalln("Can't calculate percentile: ", err)
 		}
 
 		values[i] = opts.LineData{
-			Value: fmt.Sprint(p99),
+			Value: fmt.Sprint(result),
 		}
 	}
 

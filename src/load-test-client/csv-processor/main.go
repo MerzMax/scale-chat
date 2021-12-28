@@ -12,35 +12,37 @@ import (
 	"time"
 )
 
-const root = "../load-test-results/"
-const outputDir = root + "graphics/"
+const loadTestResultFilesDir = "../results/"
+const outputDir = loadTestResultFilesDir + "graphics/"
 
 func main() {
 	// READ IN FILES
-	var fileNames []string
+	var filePaths []string
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		fileNames = append(fileNames, path)
+	err := filepath.Walk(loadTestResultFilesDir, func(path string, info os.FileInfo, err error) error {
+		filePaths = append(filePaths, path)
 		return nil
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fileNames = filterFileNames(fileNames)
+	filePaths = filterFilePaths(filePaths)
 
 	// PARSE THE CSV DATA
+
+	// key = File name
 	fileData := make(map[string][]client.MessageEventEntry)
 
-	for _, fileName := range fileNames {
-		res, err := parseCsvFile(fileName)
+	for _, filePath := range filePaths {
+		res, err := parseCsvFile(filePath)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Println(strings.TrimPrefix(strings.TrimSuffix(fileName, ".csv"), root))
+		fileData[trimFilePathAndCsvSuffix(filePath)] = res
 
-		fileData[strings.TrimPrefix(strings.TrimSuffix(fileName, ".csv"), root)] = res
+		log.Println(trimFilePathAndCsvSuffix(filePath) + ": File was parsed successfully")
 	}
 
 	// CALCULATE RTT for each message
@@ -52,7 +54,11 @@ func main() {
 		rttEntries := calculateMessageLatency(data)
 		roundTripTimeEntriesMap[key] = rttEntries
 
+		log.Println(key + ": Data was processed successfully")
+
 		Plot(key, &rttEntries)
+
+		log.Println(key + ": Data was plotted successfully")
 	}
 
 	log.Println("")
@@ -70,8 +76,8 @@ type MessageLatencyEntry struct {
 	LatenciesInNs  []int64
 }
 
-// Filter a list of filenames. All csv files will be returned
-func filterFileNames(files []string) []string {
+// Filter a list of file paths. All csv files will be returned
+func filterFilePaths(files []string) []string {
 	var res []string
 	for _, file := range files {
 		if strings.HasSuffix(file, ".csv") {
@@ -89,7 +95,8 @@ func parseCsvFile(filepath string) ([]client.MessageEventEntry, error) {
 	// Open the csv file
 	f, err := os.Open(filepath)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("could not open the file: ", err)
+		return nil, err
 	}
 	defer f.Close()
 
@@ -113,37 +120,41 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 	var msgEventEntries []client.MessageEventEntry
 
 	for i, line := range data {
-		if i > 0 { // omit header line
-			var msgEventEntry client.MessageEventEntry
-			for j, field := range line {
-				if j == 0 {
-					number, err := strconv.ParseUint(field, 10, 64)
-					if err != nil {
-						return nil, err
-					}
-					msgEventEntry.MessageId = number
-				} else if j == 1 {
-					msgEventEntry.SenderId = field
-				} else if j == 2 {
-					msgEventEntry.ClientId = field
-				} else if j == 3 {
-					if field == "Sent" {
-						msgEventEntry.Type = client.Sent
-					} else if field == "Received" {
-						msgEventEntry.Type = client.Received
-					} else {
-						return nil, errors.New("Unknown type: " + field)
-					}
-				} else if j == 4 {
-					seconds, err := strconv.ParseInt(field, 10, 64)
-					if err != nil {
-						return nil, err
-					}
-					msgEventEntry.TimeStamp = time.UnixMicro(seconds)
-				}
-			}
-			msgEventEntries = append(msgEventEntries, msgEventEntry)
+		if i <= 0 {
+			continue
 		}
+
+		var msgEventEntry client.MessageEventEntry
+
+		for j, field := range line {
+			if j == 0 {
+				number, err := strconv.ParseUint(field, 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				msgEventEntry.MessageId = number
+			} else if j == 1 {
+				msgEventEntry.SenderId = field
+			} else if j == 2 {
+				msgEventEntry.ClientId = field
+			} else if j == 3 {
+				if field == "Sent" {
+					msgEventEntry.Type = client.Sent
+				} else if field == "Received" {
+					msgEventEntry.Type = client.Received
+				} else {
+					return nil, errors.New("Unknown type: " + field)
+				}
+			} else if j == 4 {
+				seconds, err := strconv.ParseInt(field, 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				msgEventEntry.TimeStamp = time.UnixMicro(seconds)
+			}
+		}
+
+		msgEventEntries = append(msgEventEntries, msgEventEntry)
 	}
 
 	return msgEventEntries, nil
@@ -190,4 +201,8 @@ func calculateMessageLatency(msgEventEntries []client.MessageEventEntry) []Messa
 	}
 
 	return messageLatencies
+}
+
+func trimFilePathAndCsvSuffix(filepath string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(filepath, ".csv"), loadTestResultFilesDir)
 }
