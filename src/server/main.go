@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
@@ -18,12 +19,13 @@ func main() {
 	go BroadcastMessages()
 
 	// Register separate ServeMux instances for public endpoints and internal metrics
-	publicMux := http.NewServeMux()
+	publicMux := mux.NewRouter()
 	internalMux := http.NewServeMux()
 
 	// Register public endpoints
 	publicMux.HandleFunc("/", demoHandler)
 	publicMux.HandleFunc("/ws", wsHandler)
+	publicMux.HandleFunc("/ws/{chatId}", wsHandler)
 
 	// Register Prometheus endpoint
 	internalMux.Handle("/metrics", promhttp.Handler())
@@ -60,6 +62,10 @@ func main() {
 
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
+
+	//vars := mux.Vars(req)
+	//chatId := vars["chatId"]
+
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
 		log.Print("Cannot upgrade to websocket connection:", err)
