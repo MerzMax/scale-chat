@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"flag"
+	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
@@ -29,6 +31,9 @@ func main() {
 	numOfClients := flag.Int("clients", 1,
 		"Number of clients that will be started (just for load test mode")
 
+	numOfChats := flag.Int("chats", 1, "Number of chats that will be initialized, has to be minor"+
+		" or equal to clients (just for load test mode")
+
 	flag.Parse()
 
 	var msgEvents chan *client.MessageEventEntry
@@ -37,13 +42,16 @@ func main() {
 
 	// If the application isn't started in load test mode there is just one client that will be started.
 	// If the application is in load test mode, a csv file with client rtt will be written
-	if !*loadTest {
-		*numOfClients = 1
-	} else {
+	if *loadTest {
 		msgEvents = make(chan *client.MessageEventEntry, 100)
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		cancelFuncs[0] = &cancelFunc
 		go processMessageEvents(msgEvents, ctx, waitGroup)
+	}
+
+	chatIds, err := getChatIds(*numOfClients, *numOfChats)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// Create numOfClients clients that can chat
@@ -57,6 +65,7 @@ func main() {
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		cancelFuncs[i] = &cancelFunc
 
+		i := i
 		go func() {
 			chatClient := client.Client{
 				Context:          ctx,
@@ -67,6 +76,7 @@ func main() {
 				MsgFrequency:     *msgFrequency,
 				MsgSize:          *msgSize,
 				MsgEvents:        msgEvents,
+				ChatId:           chatIds[i-1],
 			}
 
 			err := chatClient.Start()
@@ -131,4 +141,31 @@ outer:
 
 	// Write remaining bytes in buffer to file
 	csvWriter.Flush()
+}
+
+func getChatIds(numOfClients, numOfChats int) ([]string, error) {
+	if numOfChats > numOfClients {
+		return nil, errors.New("invalid configuration: number of chats is bigger than number of clients")
+	}
+
+	numOfClientsInChat := numOfClients / numOfChats
+
+	var chatIds []string
+	currentChatId := uuid.New()
+	numOfCreatedChats := 1
+	counter := 0
+
+	for i := 0; i < numOfClients; i++ {
+		chatIds = append(chatIds, currentChatId.String())
+
+		counter++
+		if counter < numOfClientsInChat || numOfCreatedChats == numOfChats {
+			continue
+		}
+
+		counter = 0
+		currentChatId = uuid.New()
+		numOfCreatedChats++
+	}
+	return chatIds, nil
 }

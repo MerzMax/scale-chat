@@ -63,8 +63,12 @@ func main() {
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
 
-	//vars := mux.Vars(req)
-	//chatId := vars["chatId"]
+	log.Println("Got new connection")
+
+	vars := mux.Vars(req)
+	chatId := vars["chatId"]
+
+	log.Println(chatId)
 
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
@@ -72,7 +76,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	StartClient(wsConn)
+	StartClient(wsConn, chatId)
 }
 
 // Handles the / endpoint and serves the demo html chat client

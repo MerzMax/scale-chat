@@ -26,6 +26,7 @@ type Client struct {
 	MsgSize          int
 	MsgFrequency     int
 	MsgEvents        chan<- *MessageEventEntry
+	ChatId           string
 }
 
 func (client *Client) Start() error {
@@ -34,18 +35,29 @@ func (client *Client) Start() error {
 	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
-		log.Printf("Client started in loadtest mode. Please input your id: ")
+		log.Printf("Client started in loadtest mode.")
+		log.Printf("Please input your id:")
 		input, err := consoleReader.ReadString('\n')
 		// convert CRLF to LF
 		client.id = strings.Replace(input, "\n", "", -1)
 		if err != nil || len(client.id) < 1 {
-			log.Printf("Failed to read the name input. Using default id: MuM")
+			log.Printf("Failed to read the name input. Using default name: MuM")
 			client.id = "MuM"
+		}
+
+		log.Printf("Please input your chat id:")
+		input, err = consoleReader.ReadString('\n')
+		// convert CRLF to LF
+		client.ChatId = strings.Replace(input, "\n", "", -1)
+		if err != nil || len(client.ChatId) < 1 {
+			log.Printf("Failed to read the chat id input. Using default id: test")
+			client.ChatId = "test"
 		}
 	}
 
 	// Connection Establishment
-	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl, nil)
+	log.Printf(client.ServerUrl + "/" + client.ChatId)
+	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl+"/"+client.ChatId, nil)
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
 	}
