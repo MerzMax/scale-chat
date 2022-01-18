@@ -56,7 +56,6 @@ func (client *Client) Start() error {
 	}
 
 	// Connection Establishment
-	log.Printf(client.ServerUrl + "/" + client.ChatId)
 	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl+"/"+client.ChatId, nil)
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
