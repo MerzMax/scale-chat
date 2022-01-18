@@ -15,13 +15,14 @@
                 return
             }
           
-            const socket = new WebSocket(`ws://${document.location.host}/ws`)
+            const socket = new WebSocket(`ws://${document.location.host}/ws/demo`)
             const userIdInput = document.getElementById('userIdInput')
             const messageInput = document.getElementById('messageInput')
 
             // RECEIVING MESSAGES
             socket.onopen = function (event) {
                 displayStatusMessage('Connection established!', true)
+                displayStatusMessage('Automatically connected to the `demo` chat.', true)
             }
 
             socket.onclose = function (event) {
