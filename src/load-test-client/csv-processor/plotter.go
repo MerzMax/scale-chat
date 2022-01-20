@@ -101,9 +101,7 @@ func generateYValuesRtt(entries *[]MessageLatencyEntry) []opts.LineData {
 	values := make([]opts.LineData, len(*entries))
 
 	for i, entry := range *entries {
-		values[i] = opts.LineData{
-			Value: entry.RttInNs,
-		}
+		values[i] = opts.LineData{Value: entry.RttInNs}
 	}
 
 	return values
@@ -158,9 +156,7 @@ func generateYValuesAvgLatency(entries *[]MessageLatencyEntry) []opts.LineData {
 	for i, entry := range *entries {
 
 		if len(entry.LatenciesInNs) == 0 {
-			values[i] = opts.LineData{
-				Value: 0,
-			}
+			values[i] = opts.LineData{Value: 0}
 			continue
 		}
 
@@ -196,9 +192,7 @@ func generateYValuesPercentilesLatency(entries *[]MessageLatencyEntry, percentil
 			log.Fatalln("Can't calculate percentile: ", err)
 		}
 
-		values[i] = opts.LineData{
-			Value: fmt.Sprint(result),
-		}
+		values[i] = opts.LineData{Value: fmt.Sprint(result)}
 	}
 
 	return values

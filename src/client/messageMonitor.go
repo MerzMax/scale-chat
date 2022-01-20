@@ -30,8 +30,6 @@ func (m MessageEventEntry) StringArray() []string {
 		m.SenderId,
 		m.ClientId,
 		m.Type.String(),
-		strconv.FormatUint(
-			uint64(
-				m.TimeStamp.UnixMicro()),
-			10)}
+		strconv.FormatUint(uint64(m.TimeStamp.UnixMicro()), 10),
+	}
 }
