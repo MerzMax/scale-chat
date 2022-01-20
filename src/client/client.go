@@ -25,7 +25,7 @@ type Client struct {
 	IsLoadTestClient bool
 	MsgSize          int
 	MsgFrequency     int
-	MsgEvents        chan *MessageEventEntry
+	MsgEvents        chan<- *MessageEventEntry
 }
 
 func (client *Client) Start() error {
