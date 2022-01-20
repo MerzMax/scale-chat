@@ -41,7 +41,7 @@ func main() {
 		log.Println("Metrics server will be listening for incoming requests on port: 8081")
 
 		if err := http.Serve(l, internalMux); err != nil {
-			log.Fatal("Serving the metrics server failed: ", err)
+			log.Fatal("Serving the metrics server failed:", err)
 		}
 	}()
 
@@ -54,7 +54,7 @@ func main() {
 	log.Println("Chat server will be listening for incoming requests on port: 8080")
 
 	if err := http.Serve(l, internalMux); err != nil {
-		log.Fatal("Serving the chat server failed: ", err)
+		log.Fatal("Serving the chat server failed:", err)
 	}
 }
 
