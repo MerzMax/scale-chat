@@ -32,22 +32,23 @@ func main() {
 	flag.Parse()
 
 	var msgEvents chan *client.MessageEventEntry
+	waitGroup := &sync.WaitGroup{}
+	cancelFuncs := make([]*context.CancelFunc, *numOfClients+1)
 
 	// If the application isn't started in load test mode there is just one client that will be started.
 	// If the application is in load test mode, a csv file with client rtt will be written
 	if !*loadTest {
 		*numOfClients = 1
 	} else {
-		msgEvents = make(chan *client.MessageEventEntry)
-		go processMessageEvents(msgEvents)
+		msgEvents = make(chan *client.MessageEventEntry, 100)
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		cancelFuncs[0] = &cancelFunc
+		go processMessageEvents(msgEvents, ctx, waitGroup)
 	}
 
-	waitGroup := &sync.WaitGroup{}
-	cancelFuncs := make([]*context.CancelFunc, *numOfClients)
-
 	// Create numOfClients clients that can chat
-	for i := 0; i < *numOfClients; i++ {
-		log.Printf("Creating client number: %v / %v", i+1, *numOfClients)
+	for i := 1; i <= *numOfClients; i++ {
+		log.Printf("Creating client number: %v / %v", i, *numOfClients)
 
 		// Listen to system interrupts -> program will be stopped
 		closeConnection := make(chan os.Signal, 1)
@@ -75,7 +76,7 @@ func main() {
 		}()
 	}
 
-	waitGroup.Add(*numOfClients)
+	waitGroup.Add(*numOfClients + 1)
 
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
@@ -92,25 +93,41 @@ func main() {
 }
 
 // The function processes MessageEventEntries and writes a csv with the data collected
-func processMessageEvents(messageEvents chan *client.MessageEventEntry) {
+func processMessageEvents(
+	messageEvents <-chan *client.MessageEventEntry,
+	ctx context.Context,
+	waitGroup *sync.WaitGroup,
+) {
 	// Create new file and prepare writer
 	fileName := "load-test-client-" + time.Now().Format("2006-01-02-15-04-05") + ".csv"
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	defer file.Close()
-
 	csvWriter := csv.NewWriter(file)
 
 	// Process incoming messages
+outer:
 	for {
 		select {
-		case msgEventEntry := <-messageEvents:
-			err = csvWriter.Write(msgEventEntry.StringArray())
+		case entry := <-messageEvents:
+			err = csvWriter.Write(entry.StringArray())
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
+		case <-ctx.Done():
+			break outer
 		}
 	}
+
+	// Write remaining bytes in buffer to file
+	csvWriter.Flush()
+
+	err = file.Close()
+	if err != nil {
+		log.Fatal("Failed to close CSV file:", err)
+	}
+
+	log.Println("CSV file is closed")
+	waitGroup.Done()
 }
