@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"net"
 	"net/http"
 )
 
@@ -32,18 +33,29 @@ func main() {
 
 	// Listen on internal metrics port
 	go func() {
-		err := http.ListenAndServe(":8081", internalMux)
+		l, err := net.Listen("tcp", ":8081")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Could not listen on metrics port: ", err)
+		}
+
+		log.Println("Metrics server will be listening for incoming requests on port: 8081")
+
+		if err := http.Serve(l, internalMux); err != nil {
+			log.Fatal("Serving the metrics server failed:", err)
 		}
 	}()
 
 	// Listen on public endpoint port
-	err := http.ListenAndServe(":8080", publicMux)
+	l, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Could not listen on chat server port: ", err)
 	}
-	log.Printf("Server Started and running!")
+
+	log.Println("Chat server will be listening for incoming requests on port: 8080")
+
+	if err := http.Serve(l, internalMux); err != nil {
+		log.Fatal("Serving the chat server failed:", err)
+	}
 }
 
 // Event handler for the /ws endpoint
