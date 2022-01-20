@@ -14,20 +14,20 @@ import (
 
 func main() {
 	// Read cmd line arguments
-	loadTest := flag.Bool("load-test", false, "Flag indicates weather the client should start in "+
-		"the load test mode")
+	loadTest := flag.Bool("load-test", false,
+		"Flag indicates weather the client should start in the load test mode")
 
-	serverUrl := flag.String("server-url", "ws://localhost:8080/ws", "The url of the server to "+
-		"connect to")
+	serverUrl := flag.String("server-url", "ws://localhost:8080/ws",
+		"The url of the server to connect to")
 
-	msgFrequency := flag.Int("msg-frequency", 1000, "The frequency of the messages in ms (just "+
-		"for load test mode")
+	msgFrequency := flag.Int("msg-frequency", 1000,
+		"The frequency of the messages in ms (just for load test mode")
 
-	msgSize := flag.Int("msg-size", 256, "The size of the messages in bytes (just for load test "+
-		"mode)")
+	msgSize := flag.Int("msg-size", 256,
+		"The size of the messages in bytes (just for load test mode)")
 
-	numOfClients := flag.Int("clients", 1, "Number of clients that will be started (just for "+
-		"load test mode")
+	numOfClients := flag.Int("clients", 1,
+		"Number of clients that will be started (just for load test mode")
 
 	flag.Parse()
 
