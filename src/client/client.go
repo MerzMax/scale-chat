@@ -127,19 +127,19 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 				continue
 			}
 
-			// If the client was the sender and the loadtest mode is activated, there will be added a new message event
-			// with the metadata of this message.
-			if message.Sender == client.id && client.IsLoadTestClient {
+			// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+			if client.IsLoadTestClient {
 				var msgEventEntry = MessageEventEntry{
 					ClientId:  client.id,
+					SenderId:  message.Sender,
 					MessageId: message.MessageId,
-					Timestamp: receivedAt,
+					TimeStamp: receivedAt,
 					Type:      Received,
 				}
 				client.MsgEvents <- &msgEventEntry
-			}
 
-			log.Printf("%v", message)
+				log.Printf("%v", message)
+			}
 		}
 	}
 }
@@ -197,8 +197,9 @@ func (client *Client) sendHandler(ctx context.Context, waitGroup *sync.WaitGroup
 			if client.IsLoadTestClient {
 				var msgEventEntry = MessageEventEntry{
 					ClientId:  client.id,
+					SenderId:  client.id,
 					MessageId: message.MessageId,
-					Timestamp: ts,
+					TimeStamp: ts,
 					Type:      Sent,
 				}
 				client.MsgEvents <- &msgEventEntry
