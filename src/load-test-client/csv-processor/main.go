@@ -127,25 +127,28 @@ func parseMessageEventEntries(data [][]string) ([]client.MessageEventEntry, erro
 		var msgEventEntry client.MessageEventEntry
 
 		for j, field := range line {
-			if j == 0 {
+
+			switch j {
+			case 0:
 				number, err := strconv.ParseUint(field, 10, 64)
 				if err != nil {
 					return nil, err
 				}
 				msgEventEntry.MessageId = number
-			} else if j == 1 {
+			case 1:
 				msgEventEntry.SenderId = field
-			} else if j == 2 {
+			case 2:
 				msgEventEntry.ClientId = field
-			} else if j == 3 {
-				if field == "Sent" {
+			case 3:
+				switch field {
+				case "Sent":
 					msgEventEntry.Type = client.Sent
-				} else if field == "Received" {
+				case "Received":
 					msgEventEntry.Type = client.Received
-				} else {
+				default:
 					return nil, errors.New("Unknown type: " + field)
 				}
-			} else if j == 4 {
+			case 4:
 				seconds, err := strconv.ParseInt(field, 10, 64)
 				if err != nil {
 					return nil, err
