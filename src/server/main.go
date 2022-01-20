@@ -53,7 +53,7 @@ func main() {
 
 	log.Println("Chat server will be listening for incoming requests on port: 8080")
 
-	if err := http.Serve(l, internalMux); err != nil {
+	if err := http.Serve(l, publicMux); err != nil {
 		log.Fatal("Serving the chat server failed:", err)
 	}
 }
