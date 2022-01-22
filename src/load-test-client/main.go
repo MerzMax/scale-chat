@@ -104,6 +104,15 @@ func processMessageEvents(
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			log.Fatal("Failed to close CSV file:", err)
+		}
+
+		log.Println("CSV file is closed")
+		waitGroup.Done()
+	}()
 	csvWriter := csv.NewWriter(file)
 
 	// Process incoming messages
@@ -122,12 +131,4 @@ outer:
 
 	// Write remaining bytes in buffer to file
 	csvWriter.Flush()
-
-	err = file.Close()
-	if err != nil {
-		log.Fatal("Failed to close CSV file:", err)
-	}
-
-	log.Println("CSV file is closed")
-	waitGroup.Done()
 }
