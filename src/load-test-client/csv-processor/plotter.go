@@ -181,6 +181,10 @@ func generateYValuesPercentilesLatency(entries *[]MessageLatencyEntry, percentil
 
 	for i, entry := range *entries {
 
+		if len(entry.LatenciesInNs) == 0 {
+			continue
+		}
+
 		var f []float64
 		for _, latency := range entry.LatenciesInNs {
 			f = append(f, float64(latency))
