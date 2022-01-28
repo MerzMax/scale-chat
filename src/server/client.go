@@ -2,56 +2,65 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"scale-chat/chat"
+	"sync"
 )
 
 type Client struct {
-	wsConn   *websocket.Conn
-	outgoing chan *chat.Message
+	wsConn    *websocket.Conn
+	outgoing  chan *MessageWrapper
+	waitGroup *sync.WaitGroup
 }
 
+type MessageWrapper struct {
+	message         *chat.Message
+	processingTimer *prometheus.Timer
+}
+
+//HandleOutgoing sends outgoing messages to the client's websocket connection
 func (client *Client) HandleOutgoing() {
 	defer func() {
-		err := client.wsConn.Close()
-		if err != nil {
-			log.Println("Cannot close WebSocket", err)
-			return
-		}
+		log.Println("Client's outgoing handler finished")
+		client.waitGroup.Done()
 	}()
 
-	for {
-		select {
-		case message := <-client.outgoing:
-			data, err := message.ToJSON()
-			if err != nil {
-				continue
-			}
-
-			err = client.wsConn.WriteMessage(websocket.TextMessage, data)
-			if err != nil {
-				log.Println("Cannot send message via WebSocket", err)
-				continue
-			}
+	for wrapper := range client.outgoing {
+		data, err := wrapper.message.ToJSON()
+		if err != nil {
+			continue
 		}
+
+		err = client.wsConn.WriteMessage(websocket.TextMessage, data)
+		if err != nil {
+			log.Println("Cannot send message via WebSocket", err)
+			return
+		}
+
+		wrapper.processingTimer.ObserveDuration()
+		MessageCounterVec.WithLabelValues("outgoing").Inc()
 	}
 }
 
-func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
+// HandleIncoming reads new messages from the websocket connection
+// and broadcasts them to the other clients
+func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 	defer func() {
-		err := client.wsConn.Close()
-		if err != nil {
-			log.Println("Cannot close WebSocket", err)
-			return
-		}
+		log.Println("Client's incoming handler finished")
+		client.waitGroup.Done()
 	}()
 
 	for {
 		_, data, err := client.wsConn.ReadMessage()
 		if err != nil {
-			log.Println("Error during reading message:", err)
-			break
+			log.Println("Cannot read message on websocket connection:", err)
+			return
 		}
+
+		timer := prometheus.NewTimer(MessageProcessingTime)
+
+		MessageCounterVec.WithLabelValues("incoming").Inc()
 
 		log.Printf("Received raw message: %s", data)
 
@@ -60,6 +69,8 @@ func (client *Client) HandleIncoming(broadcast chan *chat.Message) {
 			continue
 		}
 
-		broadcast <- &message
+		wrapper := MessageWrapper{message: &message, processingTimer: timer}
+
+		incoming <- &wrapper
 	}
 }

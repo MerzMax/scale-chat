@@ -2,66 +2,75 @@ package main
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"net"
 	"net/http"
-	"scale-chat/chat"
 )
 
-var upgrader = websocket.Upgrader{} // use default options
-var chatHistory = make([]*chat.Message, 0)
-var clients = make([]*Client, 0)
-
-var broadcast = make(chan *chat.Message)
+// WebSocket connection configuration
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  128,
+	WriteBufferSize: 128,
+}
 
 func main() {
-	go broadcastMessages()
+	go BroadcastMessages()
 
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/ws", wsHandler)
-	http.HandleFunc("/", demoHandler)
-	err := http.ListenAndServe(":8080", nil)
+	// Register separate ServeMux instances for public endpoints and internal metrics
+	publicMux := http.NewServeMux()
+	internalMux := http.NewServeMux()
+
+	// Register public endpoints
+	publicMux.HandleFunc("/", demoHandler)
+	publicMux.HandleFunc("/ws", wsHandler)
+
+	// Register Prometheus endpoint
+	internalMux.Handle("/metrics", promhttp.Handler())
+
+	// Initiate Prometheus monitoring
+	InitMonitoring()
+
+	// Listen on internal metrics port
+	go func() {
+		l, err := net.Listen("tcp", ":8081")
+		if err != nil {
+			log.Fatal("Could not listen on metrics port: ", err)
+		}
+
+		log.Println("Metrics server will be listening for incoming requests on port: 8081")
+
+		if err := http.Serve(l, internalMux); err != nil {
+			log.Fatal("Serving the metrics server failed:", err)
+		}
+	}()
+
+	// Listen on public endpoint port
+	l, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Could not listen on chat server port: ", err)
+	}
+
+	log.Println("Chat server will be listening for incoming requests on port: 8080")
+
+	if err := http.Serve(l, publicMux); err != nil {
+		log.Fatal("Serving the chat server failed:", err)
 	}
 }
 
 // Event handler for the /ws endpoint
 func wsHandler(writer http.ResponseWriter, req *http.Request) {
-
-	// Upgrade the http connection to ws
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
-		log.Print("Error during connection upgradation:", err)
+		log.Print("Cannot upgrade to websocket connection:", err)
 		return
 	}
 
-	outgoing := make(chan *chat.Message) // TODO: Add buffer?
-	client := Client{wsConn: wsConn, outgoing: outgoing}
-	clients = append(clients, &client)
-
-	go client.HandleOutgoing()
-	go client.HandleIncoming(broadcast)
+	StartClient(wsConn)
 }
 
-// Event handler for the /hello endpoint
-func hello(writer http.ResponseWriter, req *http.Request) {
-	log.Println("/hello endpoint requested")
-	writer.Write([]byte("Hello World!"))
-}
-
+// Handles the / endpoint and serves the demo html chat client
 func demoHandler(writer http.ResponseWriter, req *http.Request) {
 	log.Println("serving demo HTML")
 	http.ServeFile(writer, req, "./demo.html")
-}
-
-func broadcastMessages() {
-	for {
-		select {
-		case message := <-broadcast:
-			chatHistory = append(chatHistory, message)
-			for _, client := range clients {
-				client.outgoing <- message
-			}
-		}
-	}
 }

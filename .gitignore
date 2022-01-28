@@ -1,6 +1,9 @@
 .DS_Store
 .idea/
+.env
 src/server/server
 src/client/client
-src/loadtest-client/loadtest-client
 .vscode/
+src/load-test-client/load-test-client
+src/load-test-client/results/*.csv
+src/load-test-client/results/graphics/*.html
