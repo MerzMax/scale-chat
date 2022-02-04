@@ -27,7 +27,7 @@ services:
       - .env
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
+      - ./prometheus/data:/prometheus
 
   grafana:
     image: grafana/grafana:8.2.5
@@ -51,6 +51,3 @@ services:
     privileged: true
     depends_on:
       - server
-
-volumes:
-  prometheus-data: { }
