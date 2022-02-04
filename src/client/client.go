@@ -148,9 +148,9 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 					Type:      Received,
 				}
 				client.MsgEvents <- &msgEventEntry
-
-				log.Printf("%v", message)
 			}
+
+			log.Printf("%v", message)
 		}
 	}
 }
