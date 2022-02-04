@@ -52,12 +52,16 @@ func StartClient(wsConn *websocket.Conn, room string) {
 }
 
 // BroadcastMessages listens for messages on the incoming channel and sends them to all connected clients
-func BroadcastMessages() {
+func BroadcastMessages(enableDistribution bool, outgoing chan<- *chat.Message) {
 	for wrapper := range incoming {
 		chatHistory = append(chatHistory, wrapper.message)
 
+		if enableDistribution && !wrapper.sourceDistributor {
+			outgoing <- wrapper.message
+		}
+
 		for _, client := range clients {
-			if wrapper.room != client.room {
+			if wrapper.message.Room != client.room {
 				continue
 			}
 

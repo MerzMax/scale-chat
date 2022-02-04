@@ -11,10 +11,11 @@ type Message struct {
 	Text      string    `json:"text"`
 	Sender    string    `json:"sender"`
 	SentAt    time.Time `json:"sent_at"`
+	Room      string    `json:"room"`
 }
 
-// Unmarshal a given byte array to a Message
-func (msg *Message) Unmarshal(data []byte) error {
+// UnmarshalBinary a given byte array to a Message
+func (msg *Message) UnmarshalBinary(data []byte) error {
 	err := json.Unmarshal(data, msg)
 	if err != nil {
 		log.Printf("Cannot parse message: %v", err)
@@ -23,8 +24,8 @@ func (msg *Message) Unmarshal(data []byte) error {
 	return nil
 }
 
-// Marshal a given Message to a byte array
-func (msg *Message) Marshal() ([]byte, error) {
+// MarshalBinary a given Message to a byte array
+func (msg *Message) MarshalBinary() ([]byte, error) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		log.Printf("Cannot marshal message: %v", err)

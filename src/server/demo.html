@@ -5,7 +5,7 @@
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <script>
         window.onload = function () {
-            // The messageId will be increased for each message that will be sent.
+            // The messageId will be increased for each distMsg that will be sent.
             var messageId = 0
                 
             resetInputFields()
@@ -34,7 +34,7 @@
             }
 
             socket.onerror = function (error) {
-                console.error(`Connection error: ${error.message}`, error)
+                console.error(`Connection error: ${error.distMsg}`, error)
             }
 
             socket.onmessage = function (event) {
@@ -59,13 +59,13 @@
                 }
 
                 if (!messageInput.value) {
-                    displayStatusMessage('Please input a message.', false)
+                    displayStatusMessage('Please input a distMsg.', false)
                     return false
                 }
 
                 const now = new Date(Date.now())
 
-                const message = {
+                const distMsg = {
                     message_id: messageId,
                     text: messageInput.value,
                     sender: userIdInput.value,
@@ -73,15 +73,15 @@
                 }
 
                 // Sending Message
-                socket.send(JSON.stringify(message))
+                socket.send(JSON.stringify(distMsg))
 
-                displayOutgoingChatMessage(message)
+                displayOutgoingChatMessage(distMsg)
 
                 // Lock the user id value and remove focus
                 userIdInput.readOnly = true
                 userIdInput.blur()
 
-                // Reset message input and focus element
+                // Reset distMsg input and focus element
                 messageInput.value = ""
                 messageInput.focus()
               
@@ -91,14 +91,14 @@
             }
         }
 
-        function displayStatusMessage(message, success) {
+        function displayStatusMessage(distMsg, success) {
             const messageList = document.getElementById('messageList')
 
             const newMessageWrapper = document.createElement('div')
             const newMessage = document.createElement('div')
-            const msg = document.createTextNode(message)
+            const distMsg = document.createTextNode(distMsg)
             newMessageWrapper.appendChild(newMessage)
-            newMessage.appendChild(msg)
+            newMessage.appendChild(distMsg)
 
             newMessage.classList.add(success ? 'bg-green-200' : 'bg-red-200')
 
@@ -170,9 +170,9 @@
             return newMessage
         }
 
-        function addPillStyling(messageWrapper, message) {
+        function addPillStyling(messageWrapper, distMsg) {
             messageWrapper.classList.add('flex', 'mb-1')
-            message.classList.add('flex-initial', 'max-w-2xl', 'px-3', 'py-1', 'rounded-3xl')
+            distMsg.classList.add('flex-initial', 'max-w-2xl', 'px-3', 'py-1', 'rounded-3xl')
         }
 
         function resetInputFields() {
