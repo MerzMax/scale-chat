@@ -21,7 +21,7 @@ var incoming = make(chan *MessageWrapper, messageBufferSize)
 
 // StartClient starts a client's incoming and outgoing message handlers
 // and waits until the connection breaks to remove the client
-func StartClient(wsConn *websocket.Conn, chatId string) {
+func StartClient(wsConn *websocket.Conn, room string) {
 	outgoing := make(chan *MessageWrapper, messageBufferSize)
 
 	waitGroup := sync.WaitGroup{}
@@ -31,7 +31,7 @@ func StartClient(wsConn *websocket.Conn, chatId string) {
 		wsConn:    wsConn,
 		outgoing:  outgoing,
 		waitGroup: &waitGroup,
-		chatId:    chatId,
+		room:      room,
 	}
 	clients = append(clients, &client)
 
@@ -57,7 +57,7 @@ func BroadcastMessages() {
 		chatHistory = append(chatHistory, wrapper.message)
 
 		for _, client := range clients {
-			if wrapper.chatId != client.chatId {
+			if wrapper.room != client.room {
 				continue
 			}
 

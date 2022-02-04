@@ -12,13 +12,13 @@ type Client struct {
 	wsConn    *websocket.Conn
 	outgoing  chan *MessageWrapper
 	waitGroup *sync.WaitGroup
-	chatId    string
+	room      string
 }
 
 type MessageWrapper struct {
 	message         *chat.Message
 	processingTimer *prometheus.Timer
-	chatId          string
+	room            string
 }
 
 //HandleOutgoing sends outgoing messages to the client's websocket connection
@@ -71,7 +71,7 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 			continue
 		}
 
-		wrapper := MessageWrapper{message: &message, processingTimer: timer, chatId: client.chatId}
+		wrapper := MessageWrapper{message: &message, processingTimer: timer, room: client.room}
 
 		incoming <- &wrapper
 	}

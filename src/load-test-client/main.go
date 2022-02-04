@@ -31,8 +31,8 @@ func main() {
 	numOfClients := flag.Int("clients", 1,
 		"Number of clients that will be started (just for load test mode")
 
-	numOfChats := flag.Int("chats", 1, "Number of chats that will be initialized, has to be minor"+
-		" or equal to clients (just for load test mode")
+	numOfRooms := flag.Int("rooms", 1, "Number of chat rooms that will be initialized, has to be "+
+		"minor or equal to clients (just for load test mode")
 
 	flag.Parse()
 
@@ -49,7 +49,7 @@ func main() {
 		go processMessageEvents(msgEvents, ctx, waitGroup)
 	}
 
-	chatIds, err := getChatIds(*numOfClients, *numOfChats)
+	rooms, err := getRooms(*numOfClients, *numOfRooms)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func main() {
 				MsgFrequency:     *msgFrequency,
 				MsgSize:          *msgSize,
 				MsgEvents:        msgEvents,
-				ChatId:           chatIds[i-1],
+				Room:             rooms[i-1],
 			}
 
 			err := chatClient.Start()
@@ -143,20 +143,20 @@ outer:
 	csvWriter.Flush()
 }
 
-func getChatIds(numOfClients, numOfChats int) ([]string, error) {
+func getRooms(numOfClients, numOfChats int) ([]string, error) {
 	if numOfChats > numOfClients {
 		return nil, errors.New("invalid configuration: number of chats is bigger than number of clients")
 	}
 
 	numOfClientsInChat := numOfClients / numOfChats
 
-	var chatIds []string
-	currentChatId := uuid.New()
+	var rooms []string
+	currentRoom := uuid.New()
 	numOfCreatedChats := 1
 	counter := 0
 
 	for i := 0; i < numOfClients; i++ {
-		chatIds = append(chatIds, currentChatId.String())
+		rooms = append(rooms, currentRoom.String())
 
 		counter++
 		if counter < numOfClientsInChat || numOfCreatedChats == numOfChats {
@@ -164,8 +164,8 @@ func getChatIds(numOfClients, numOfChats int) ([]string, error) {
 		}
 
 		counter = 0
-		currentChatId = uuid.New()
+		currentRoom = uuid.New()
 		numOfCreatedChats++
 	}
-	return chatIds, nil
+	return rooms, nil
 }

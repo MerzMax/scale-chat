@@ -25,7 +25,7 @@ func main() {
 	// Register public endpoints
 	publicMux.HandleFunc("/", demoHandler)
 	publicMux.HandleFunc("/ws", wsHandler)
-	publicMux.HandleFunc("/ws/{chatId}", wsHandler)
+	publicMux.HandleFunc("/ws/{room}", wsHandler)
 
 	// Register Prometheus endpoint
 	internalMux.Handle("/metrics", promhttp.Handler())
@@ -66,9 +66,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 	log.Println("Got new connection")
 
 	vars := mux.Vars(req)
-	chatId := vars["chatId"]
-
-	log.Println(chatId)
+	room := vars["room"]
 
 	wsConn, err := upgrader.Upgrade(writer, req, nil)
 	if err != nil {
@@ -76,7 +74,7 @@ func wsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	StartClient(wsConn, chatId)
+	StartClient(wsConn, room)
 }
 
 // Handles the / endpoint and serves the demo html chat client
