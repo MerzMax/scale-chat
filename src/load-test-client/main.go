@@ -38,14 +38,20 @@ func main() {
 
 	var msgEvents chan *client.MessageEventEntry
 	waitGroup := &sync.WaitGroup{}
-	cancelFuncs := make([]*context.CancelFunc, *numOfClients+1)
+	numOfWaitGroups := *numOfClients + 1
+	if !*loadTest {
+		*numOfClients = 1
+		numOfWaitGroups = 1
+	}
+
+	var cancelFuncs []*context.CancelFunc
 
 	// If the application isn't started in load test mode there is just one client that will be started.
 	// If the application is in load test mode, a csv file with client rtt will be written
 	if *loadTest {
 		msgEvents = make(chan *client.MessageEventEntry, 100)
 		ctx, cancelFunc := context.WithCancel(context.Background())
-		cancelFuncs[0] = &cancelFunc
+		cancelFuncs = append(cancelFuncs, &cancelFunc)
 		go processMessageEvents(msgEvents, ctx, waitGroup)
 	}
 
@@ -63,7 +69,7 @@ func main() {
 		signal.Notify(closeConnection, os.Interrupt)
 
 		ctx, cancelFunc := context.WithCancel(context.Background())
-		cancelFuncs[i] = &cancelFunc
+		cancelFuncs = append(cancelFuncs, &cancelFunc)
 
 		i := i
 		go func() {
@@ -86,7 +92,7 @@ func main() {
 		}()
 	}
 
-	waitGroup.Add(*numOfClients + 1)
+	waitGroup.Add(numOfWaitGroups)
 
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
