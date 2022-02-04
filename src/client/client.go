@@ -133,7 +133,8 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 
 			receivedAt := time.Now()
 
-			message, err := chat.ParseMessage(*data)
+			var message chat.Message
+			err := message.Unmarshal(*data)
 			if err != nil {
 				continue
 			}
@@ -191,7 +192,7 @@ func (client *Client) sendHandler(ctx context.Context, waitGroup *sync.WaitGroup
 				SentAt:    time.Now(),
 			}
 
-			data, err := message.ToJSON()
+			data, err := message.Marshal()
 			if err != nil {
 				continue
 			}

@@ -30,7 +30,7 @@ func (client *Client) HandleOutgoing() {
 	}()
 
 	for wrapper := range client.outgoing {
-		data, err := wrapper.message.ToJSON()
+		data, err := wrapper.message.Marshal()
 		if err != nil {
 			continue
 		}
@@ -67,7 +67,8 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 
 		log.Printf("Received raw message: %s", data)
 
-		message, err := chat.ParseMessage(data)
+		var message chat.Message
+		err = message.Unmarshal(data)
 		if err != nil {
 			continue
 		}

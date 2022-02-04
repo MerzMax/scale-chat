@@ -13,18 +13,19 @@ type Message struct {
 	SentAt    time.Time `json:"sent_at"`
 }
 
-func ParseMessage(data []byte) (Message, error) {
-	var message Message
-	err := json.Unmarshal(data, &message)
+// Unmarshal a given byte array to a Message
+func (msg *Message) Unmarshal(data []byte) error {
+	err := json.Unmarshal(data, msg)
 	if err != nil {
 		log.Printf("Cannot parse message: %v", err)
-		return message, err
+		return err
 	}
-	return message, nil
+	return nil
 }
 
-func (message *Message) ToJSON() ([]byte, error) {
-	data, err := json.Marshal(message)
+// Marshal a given Message to a byte array
+func (msg *Message) Marshal() ([]byte, error) {
+	data, err := json.Marshal(msg)
 	if err != nil {
 		log.Printf("Cannot marshal message: %v", err)
 		return data, err
