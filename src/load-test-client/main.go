@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/csv"
-	"errors"
 	"flag"
 	"github.com/google/uuid"
 	"log"
@@ -28,20 +27,21 @@ func main() {
 	msgSize := flag.Int("msg-size", 256,
 		"The size of the messages in bytes (just for load test mode)")
 
-	numOfClients := flag.Int("clients", 1,
-		"Number of clients that will be started (just for load test mode")
+	numOfRooms := flag.Int("rooms", 1,
+		"Number of chat rooms that will be initialized (just for load test mode)")
 
-	numOfRooms := flag.Int("rooms", 1, "Number of chat rooms that will be initialized, has to be "+
-		"minor or equal to clients (just for load test mode")
+	roomSize := flag.Int("room-size", 1,
+		"Number of clients that will be started per room (just for load test mode")
 
 	flag.Parse()
 
 	var msgEvents chan *client.MessageEventEntry
 	waitGroup := &sync.WaitGroup{}
-	numOfWaitGroups := *numOfClients + 1
+	numOfWaits := (*numOfRooms * *roomSize) + 1
 	if !*loadTest {
-		*numOfClients = 1
-		numOfWaitGroups = 1
+		*numOfRooms = 1
+		*roomSize = 1
+		numOfWaits = 1
 	}
 
 	var cancelFuncs []*context.CancelFunc
@@ -55,44 +55,43 @@ func main() {
 		go processMessageEvents(msgEvents, ctx, waitGroup)
 	}
 
-	rooms, err := getRooms(*numOfClients, *numOfRooms)
-	if err != nil {
-		log.Fatal(err)
+	// Create rooms
+	for i := 0; i < *numOfRooms; i++ {
+		room := uuid.New().String()
+
+		// Create clients per room
+		for j := 1; j <= *roomSize; j++ {
+			log.Printf("Creating client number: %v / %v", j, *roomSize)
+
+			// Listen to system interrupts -> program will be stopped
+			closeConnection := make(chan os.Signal, 1)
+			signal.Notify(closeConnection, os.Interrupt)
+
+			ctx, cancelFunc := context.WithCancel(context.Background())
+			cancelFuncs = append(cancelFuncs, &cancelFunc)
+
+			go func() {
+				chatClient := client.Client{
+					Context:          ctx,
+					WaitGroup:        waitGroup,
+					ServerUrl:        *serverUrl,
+					CloseConnection:  closeConnection,
+					IsLoadTestClient: *loadTest,
+					MsgFrequency:     *msgFrequency,
+					MsgSize:          *msgSize,
+					MsgEvents:        msgEvents,
+					Room:             room,
+				}
+
+				err := chatClient.Start()
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+			}()
+		}
 	}
 
-	// Create numOfClients clients that can chat
-	for i := 1; i <= *numOfClients; i++ {
-		log.Printf("Creating client number: %v / %v", i, *numOfClients)
-
-		// Listen to system interrupts -> program will be stopped
-		closeConnection := make(chan os.Signal, 1)
-		signal.Notify(closeConnection, os.Interrupt)
-
-		ctx, cancelFunc := context.WithCancel(context.Background())
-		cancelFuncs = append(cancelFuncs, &cancelFunc)
-
-		i := i
-		go func() {
-			chatClient := client.Client{
-				Context:          ctx,
-				WaitGroup:        waitGroup,
-				ServerUrl:        *serverUrl,
-				CloseConnection:  closeConnection,
-				IsLoadTestClient: *loadTest,
-				MsgFrequency:     *msgFrequency,
-				MsgSize:          *msgSize,
-				MsgEvents:        msgEvents,
-				Room:             rooms[i-1],
-			}
-
-			err := chatClient.Start()
-			if err != nil {
-				log.Fatalf("%v", err)
-			}
-		}()
-	}
-
-	waitGroup.Add(numOfWaitGroups)
+	waitGroup.Add(numOfWaits)
 
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
@@ -147,31 +146,4 @@ outer:
 
 	// Write remaining bytes in buffer to file
 	csvWriter.Flush()
-}
-
-func getRooms(numOfClients, numOfChats int) ([]string, error) {
-	if numOfChats > numOfClients {
-		return nil, errors.New("invalid configuration: number of chats is bigger than number of clients")
-	}
-
-	numOfClientsInChat := numOfClients / numOfChats
-
-	var rooms []string
-	currentRoom := uuid.New()
-	numOfCreatedChats := 1
-	counter := 0
-
-	for i := 0; i < numOfClients; i++ {
-		rooms = append(rooms, currentRoom.String())
-
-		counter++
-		if counter < numOfClientsInChat || numOfCreatedChats == numOfChats {
-			continue
-		}
-
-		counter = 0
-		currentRoom = uuid.New()
-		numOfCreatedChats++
-	}
-	return rooms, nil
 }

@@ -23,7 +23,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14282,
   "graphTooltip": 0,
-  "iteration": 1642865978052,
+  "iteration": 1643972821121,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -86,7 +86,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\".+server.+\",name=~\".+\"}[5m])) *100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\".+server.+\",name=~\".+\"}[60s])) *100",
           "hide": false,
           "interval": "",
           "legendFormat": "Server",
@@ -431,7 +431,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[5m])) by (name)",
+          "exemplar": true,
+          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[60s])) by (name)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{name}}",
@@ -525,7 +526,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[5m])) by (name)",
+          "exemplar": true,
+          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[60s])) by (name)",
           "interval": "",
           "legendFormat": "{{name}}",
           "refId": "A"
