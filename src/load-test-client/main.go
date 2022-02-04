@@ -32,22 +32,26 @@ func main() {
 	flag.Parse()
 
 	var msgEvents chan *client.MessageEventEntry
+	var cancelFuncs []*context.CancelFunc
 	waitGroup := &sync.WaitGroup{}
-	numOfWaitGroups := *numOfClients + 1
+
 	if !*loadTest {
 		*numOfClients = 1
-		numOfWaitGroups = 1
 	}
 
-	var cancelFuncs []*context.CancelFunc
+	waitGroup.Add(*numOfClients)
+
+	var csvWriterCancelFunc *context.CancelFunc
+	csvWriterWaitGroup := &sync.WaitGroup{}
 
 	// If the application isn't started in load test mode there is just one client that will be started.
 	// If the application is in load test mode, a csv file with client rtt will be written
 	if *loadTest {
 		msgEvents = make(chan *client.MessageEventEntry, 100)
 		ctx, cancelFunc := context.WithCancel(context.Background())
-		cancelFuncs = append(cancelFuncs, &cancelFunc)
-		go processMessageEvents(msgEvents, ctx, waitGroup)
+		csvWriterCancelFunc = &cancelFunc
+		go processMessageEvents(msgEvents, ctx, csvWriterWaitGroup)
+		csvWriterWaitGroup.Add(1)
 	}
 
 	// Create numOfClients clients that can chat
@@ -80,8 +84,6 @@ func main() {
 		}()
 	}
 
-	waitGroup.Add(numOfWaitGroups)
-
 	// Listen to system interrupts -> program will be stopped
 	sysInterrupt := make(chan os.Signal, 1)
 	signal.Notify(sysInterrupt, os.Interrupt)
@@ -93,7 +95,16 @@ func main() {
 		(*cancelFunc)()
 	}
 	waitGroup.Wait()
-	log.Println("All clients finished, shutting down now")
+
+	log.Println("All clients finished")
+
+	if *loadTest {
+		log.Println("Cancelling CSV writer...")
+		(*csvWriterCancelFunc)()
+		csvWriterWaitGroup.Wait()
+	}
+
+	log.Println("Shutting down now")
 }
 
 // The function processes MessageEventEntries and writes a csv with the data collected
