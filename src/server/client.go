@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
@@ -75,4 +76,17 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 
 		incoming <- &wrapper
 	}
+}
+
+// MarshalBinary marshal a MessageWrapper to a byte array
+func (mw *MessageWrapper) MarshalBinary() ([]byte, error) {
+	return json.Marshal(mw)
+}
+
+// UnmarshalBinary unmarshal a byte array to a MessageWrapper
+func (mw *MessageWrapper) UnmarshalBinary(data []byte) error {
+	if err := json.Unmarshal(data, mw); err != nil {
+		return err
+	}
+	return nil
 }
