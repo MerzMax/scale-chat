@@ -17,9 +17,9 @@ type Client struct {
 }
 
 type MessageWrapper struct {
-	message         *chat.Message
-	processingTimer *prometheus.Timer
-	room            string
+	message           *chat.Message
+	processingTimer   *prometheus.Timer
+	sourceDistributor bool
 }
 
 //HandleOutgoing sends outgoing messages to the client's websocket connection
@@ -30,7 +30,7 @@ func (client *Client) HandleOutgoing() {
 	}()
 
 	for wrapper := range client.outgoing {
-		data, err := wrapper.message.Marshal()
+		data, err := wrapper.message.MarshalBinary()
 		if err != nil {
 			continue
 		}
@@ -68,12 +68,12 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 		log.Printf("Received raw message: %s", data)
 
 		var message chat.Message
-		err = message.Unmarshal(data)
+		err = message.UnmarshalBinary(data)
 		if err != nil {
 			continue
 		}
 
-		wrapper := MessageWrapper{message: &message, processingTimer: timer, room: client.room}
+		wrapper := MessageWrapper{message: &message, processingTimer: timer, sourceDistributor: false}
 
 		incoming <- &wrapper
 	}
@@ -81,7 +81,12 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 
 // MarshalBinary marshal a MessageWrapper to a byte array
 func (mw *MessageWrapper) MarshalBinary() ([]byte, error) {
-	return json.Marshal(mw)
+	data, err := json.Marshal(mw)
+	if err != nil {
+		log.Printf("Cannot marshal message: %v", err)
+		return data, err
+	}
+	return data, nil
 }
 
 // UnmarshalBinary unmarshal a byte array to a MessageWrapper
