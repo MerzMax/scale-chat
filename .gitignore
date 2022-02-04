@@ -7,3 +7,6 @@ src/load-test-client/load-test-client
 
 src/load-test-client/results/*.csv
 src/load-test-client/results/graphics/*.html
+
+prometheus/data/*
+!prometheus/data/.gitkeep
