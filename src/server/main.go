@@ -25,6 +25,8 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Couldn't load .env file.")
+	} else {
+		log.Println("Loaded the configuration via .env.")
 	}
 
 	enableDist := false
@@ -34,11 +36,15 @@ func main() {
 		if err != nil {
 			log.Println("Distributor will be disabled")
 		}
+		log.Println("Distributor will be enabled")
 	}
 
 	var distributeIncoming chan *chat.Message
 	var distributeOutgoing chan *chat.Message
 	if enableDist {
+		serverId := uuid.New().String()
+		log.Println("ServerId for distribution: ", serverId)
+
 		distributeIncoming = make(chan *chat.Message)
 		distributeOutgoing = make(chan *chat.Message)
 		distr := Distributor{
@@ -49,13 +55,11 @@ func main() {
 			Outgoing:       distributeOutgoing,
 		}
 
-		err = distr.Connect()
+		err = distr.Ping()
 		if err != nil {
-			log.Panicln("Couldn't connect to the distributor", err)
+			log.Panicln("Couldn't connect to the distributor. Pinging failed", err)
 		}
 
-		serverId := uuid.New().String()
-		log.Println("ServerId for distribution: ", serverId)
 		go distr.Subscribe(serverId)
 		go distr.Publish(serverId)
 	}
