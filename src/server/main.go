@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Println("Couldn't load .env file.")
 	} else {
-		log.Println("Loaded the configuration via .env.")
+		log.Println("Loaded a configuration via .env.")
 	}
 
 	enableDist := false
