@@ -5,24 +5,23 @@
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <script>
         window.onload = function () {
-            // The messageId will be increased for each distMsg that will be sent.
+            // The messageId will be increased for each message that will be sent.
             var messageId = 0
-                
+
             resetInputFields()
 
             if (!('WebSocket' in window)) {
                 alert('WebSocket NOT supported by your Browser!')
                 return
             }
-          
-            const socket = new WebSocket(`ws://${document.location.host}/ws/demo`)
+
+            const socket = new WebSocket(`ws://${document.location.host}/ws`)
             const userIdInput = document.getElementById('userIdInput')
             const messageInput = document.getElementById('messageInput')
 
             // RECEIVING MESSAGES
             socket.onopen = function (event) {
                 displayStatusMessage('Connection established!', true)
-                displayStatusMessage('Automatically connected to the `demo` chat room.', true)
             }
 
             socket.onclose = function (event) {
@@ -34,7 +33,7 @@
             }
 
             socket.onerror = function (error) {
-                console.error(`Connection error: ${error.distMsg}`, error)
+                console.error(`Connection error: ${error.message}`, error)
             }
 
             socket.onmessage = function (event) {
@@ -59,13 +58,13 @@
                 }
 
                 if (!messageInput.value) {
-                    displayStatusMessage('Please input a distMsg.', false)
+                    displayStatusMessage('Please input a message.', false)
                     return false
                 }
 
                 const now = new Date(Date.now())
 
-                const distMsg = {
+                const message = {
                     message_id: messageId,
                     text: messageInput.value,
                     sender: userIdInput.value,
@@ -73,32 +72,32 @@
                 }
 
                 // Sending Message
-                socket.send(JSON.stringify(distMsg))
+                socket.send(JSON.stringify(message))
 
-                displayOutgoingChatMessage(distMsg)
+                displayOutgoingChatMessage(message)
 
                 // Lock the user id value and remove focus
                 userIdInput.readOnly = true
                 userIdInput.blur()
 
-                // Reset distMsg input and focus element
+                // Reset message input and focus element
                 messageInput.value = ""
                 messageInput.focus()
-              
+
                 messageId++
 
                 return false
             }
         }
 
-        function displayStatusMessage(distMsg, success) {
+        function displayStatusMessage(message, success) {
             const messageList = document.getElementById('messageList')
 
             const newMessageWrapper = document.createElement('div')
             const newMessage = document.createElement('div')
-            const distMsg = document.createTextNode(distMsg)
+            const msg = document.createTextNode(message)
             newMessageWrapper.appendChild(newMessage)
-            newMessage.appendChild(distMsg)
+            newMessage.appendChild(msg)
 
             newMessage.classList.add(success ? 'bg-green-200' : 'bg-red-200')
 
@@ -170,9 +169,9 @@
             return newMessage
         }
 
-        function addPillStyling(messageWrapper, distMsg) {
+        function addPillStyling(messageWrapper, message) {
             messageWrapper.classList.add('flex', 'mb-1')
-            distMsg.classList.add('flex-initial', 'max-w-2xl', 'px-3', 'py-1', 'rounded-3xl')
+            message.classList.add('flex-initial', 'max-w-2xl', 'px-3', 'py-1', 'rounded-3xl')
         }
 
         function resetInputFields() {
