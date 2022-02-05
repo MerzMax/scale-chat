@@ -45,8 +45,8 @@ func (distMsg DistributionMessage) MarshalBinary() ([]byte, error) {
 	return data, nil
 }
 
-// Connect connects a Distributor to the redis server
-func (distr *Distributor) Connect() error {
+// Ping connects a Distributor to the redis server
+func (distr *Distributor) Ping() error {
 
 	distr.client = *redis.NewClient(&redis.Options{
 		Addr:     distr.Server,
@@ -54,15 +54,6 @@ func (distr *Distributor) Connect() error {
 		DB:       0,
 	})
 
-	if err := distr.pingServer(); err != nil {
-		return err
-	}
-
-	distr.ctx = context.Background()
-	return nil
-}
-
-func (distr *Distributor) pingServer() error {
 	log.Println("Try to ping redis...")
 	err := distr.client.Ping(context.Background()).Err()
 	if err != nil {
@@ -74,6 +65,8 @@ func (distr *Distributor) pingServer() error {
 		}
 	}
 	log.Println("Ping succeeded.")
+
+	distr.ctx = context.Background()
 	return nil
 }
 
