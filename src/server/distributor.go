@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
@@ -22,12 +21,8 @@ type Distributor struct {
 }
 
 type DistributionMessage struct {
-	MessageId uint64    `json:"message_id"`
-	Text      string    `json:"text"`
-	Sender    string    `json:"sender"`
-	SentAt    time.Time `json:"sent_at"`
-	Room      string    `json:"room"`
-	ServerId  string    `json:"server_id"`
+	Message  chat.Message `json:"message"`
+	ServerId string       `json:"server_id"`
 }
 
 // UnmarshalBinary a given byte array to a Message
@@ -41,7 +36,7 @@ func (distMsg *DistributionMessage) UnmarshalBinary(data []byte) error {
 }
 
 // MarshalBinary a given Message to a byte array
-func (distMsg *DistributionMessage) MarshalBinary() ([]byte, error) {
+func (distMsg DistributionMessage) MarshalBinary() ([]byte, error) {
 	data, err := json.Marshal(distMsg)
 	if err != nil {
 		log.Printf("Cannot marshal message: %v", err)
@@ -91,8 +86,6 @@ func (distr *Distributor) Subscribe(serverId string) {
 
 		MessageCounterVec.WithLabelValues("incoming").Inc()
 
-		log.Printf("Received raw distributor distMsg: %s", msg)
-
 		var distMsg DistributionMessage
 		err := distMsg.UnmarshalBinary([]byte(msg.Payload))
 		if err != nil {
@@ -103,15 +96,7 @@ func (distr *Distributor) Subscribe(serverId string) {
 			continue
 		}
 
-		message := chat.Message{
-			MessageId: distMsg.MessageId,
-			Text:      distMsg.Text,
-			Sender:    distMsg.Sender,
-			SentAt:    distMsg.SentAt,
-			Room:      distMsg.Room,
-		}
-
-		wrapper := MessageWrapper{message: &message, processingTimer: timer, sourceDistributor: true}
+		wrapper := MessageWrapper{message: &distMsg.Message, processingTimer: timer, sourceDistributor: true}
 
 		incoming <- &wrapper
 	}
@@ -122,12 +107,8 @@ func (distr *Distributor) Publish(serverId string) {
 	for message := range distr.Outgoing {
 
 		distMsg := DistributionMessage{
-			MessageId: message.MessageId,
-			Text:      message.Text,
-			Sender:    message.Sender,
-			SentAt:    message.SentAt,
-			Room:      message.Room,
-			ServerId:  serverId,
+			Message:  *message,
+			ServerId: serverId,
 		}
 
 		err := distr.client.Publish(distr.ctx, distr.Topic, distMsg).Err()
@@ -135,6 +116,6 @@ func (distr *Distributor) Publish(serverId string) {
 			log.Fatal("Failed to publish distMsg via the distributor: ", err)
 		}
 
-		fmt.Println("Sent a new distMsg via the distributor: ", distMsg)
+		log.Println("Sent a new distMsg via the distributor: ", distMsg)
 	}
 }
