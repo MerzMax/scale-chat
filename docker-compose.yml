@@ -3,16 +3,16 @@ version: "3"
 services:
 
   server:
+    image: scale-chat-server
     build:
       context: .
       dockerfile: src/server/Dockerfile
     ports:
       - "80:8080"
     environment:
-      ENABLE_DIST: ${ENABLE_DIST}
+      ENABLE_DIST: "true"
       DIST_SERVER: "redis:6379"
-      DIST_SERVER_PASSWORD: ${DIST_SERVER_PASSWORD}
-      DIST_TOPIC: ${DIST_TOPIC}
+      DIST_TOPIC: "messages"
     deploy:
       replicas: 2
       resources:
@@ -46,6 +46,7 @@ services:
     image: grafana/grafana:8.2.5
     environment:
       PROMETHEUS_HOST: http://prometheus:9090
+      # When deploying with docker stack deploy the .env file will be ignored and the default config will be initialized
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
     ports:
