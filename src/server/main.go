@@ -37,6 +37,9 @@ func main() {
 			log.Println("Distributor will be disabled")
 		}
 		log.Println("Distributor will be enabled")
+	} else {
+		log.Println("Could not read ENABLE_DIST env variable")
+		log.Println("Distributor will be disabled.")
 	}
 
 	var distributeIncoming chan *chat.Message
