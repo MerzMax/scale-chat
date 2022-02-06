@@ -7,13 +7,14 @@ services:
       context: .
       dockerfile: src/server/Dockerfile
     ports:
-      - "8080:8080"
+      - "80:8080"
     environment:
       ENABLE_DIST: ${ENABLE_DIST}
       DIST_SERVER: "redis:6379"
       DIST_SERVER_PASSWORD: ${DIST_SERVER_PASSWORD}
       DIST_TOPIC: ${DIST_TOPIC}
     deploy:
+      replicas: 2
       resources:
           limits:
             cpus: "0.25"
