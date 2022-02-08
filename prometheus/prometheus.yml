@@ -20,10 +20,11 @@ scrape_configs:
       # Use the prometheus-job Swarm label as Prometheus job label.
       - source_labels: [ __meta_dockerswarm_service_label_prometheus_job ]
         target_label: job
-      # Fetch metrics on port 8081.
-      - source_labels: [ __address__ ]
-        target_label: __address__
-        replacement: $1:8081
+      # Update scrape address using provided port
+      - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_port]
+          target_label: __address__
+          regex: ([^:]+):([^;]+);(.*)
+          replacement: $1:$3
 
   - job_name: cadvisor
     static_configs:
