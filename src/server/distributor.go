@@ -77,7 +77,7 @@ func (distr *Distributor) Subscribe(serverId string) {
 	for msg := range subscription.Channel() {
 		timer := prometheus.NewTimer(MessageProcessingTime)
 
-		MessageCounterVec.WithLabelValues("incoming").Inc()
+		MessageCounterVec.WithLabelValues("incoming_from_distributor").Inc()
 
 		var distMsg DistributionMessage
 		err := distMsg.UnmarshalBinary([]byte(msg.Payload))
@@ -103,6 +103,8 @@ func (distr *Distributor) Publish(serverId string) {
 			Message:  *message,
 			ServerId: serverId,
 		}
+
+		MessageCounterVec.WithLabelValues("outgoing_to_distributor").Inc()
 
 		err := distr.client.Publish(distr.ctx, distr.Topic, distMsg).Err()
 		if err != nil {
