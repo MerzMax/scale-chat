@@ -48,7 +48,14 @@ func (client *Client) HandleOutgoing() {
 		}
 
 		wrapper.processingTimer.ObserveDuration()
-		MessageCounterVec.WithLabelValues("outgoing").Inc()
+
+		if wrapper.source == CLIENT {
+			MessageCounterVec.WithLabelValues("outgoing_from_client").Inc()
+		}
+
+		if wrapper.source == DISTRIBUTOR {
+			MessageCounterVec.WithLabelValues("outgoing_from_distributor").Inc()
+		}
 	}
 }
 
@@ -69,7 +76,7 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 
 		timer := prometheus.NewTimer(MessageProcessingTime)
 
-		MessageCounterVec.WithLabelValues("incoming").Inc()
+		MessageCounterVec.WithLabelValues("incoming_from_client").Inc()
 
 		log.Printf("Received raw message: %s", data)
 
