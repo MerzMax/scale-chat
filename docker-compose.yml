@@ -34,6 +34,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.31.1
+    user: 117:117
     networks:
       - default
     depends_on:
