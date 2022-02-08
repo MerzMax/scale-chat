@@ -10,9 +10,6 @@ import (
 // messageBufferSize is the buffer size of the incoming and outgoing message channels
 const messageBufferSize = 100
 
-// chatHistory is the history of all chat messages
-var chatHistory = make([]*chat.Message, 0)
-
 // clients that are connected to the server
 var clients = make([]*Client, 0)
 
@@ -54,8 +51,6 @@ func StartClient(wsConn *websocket.Conn, room string) {
 // BroadcastMessages listens for messages on the incoming channel and sends them to all connected clients
 func BroadcastMessages(enableDistribution bool, outgoing chan<- *chat.Message) {
 	for wrapper := range incoming {
-		chatHistory = append(chatHistory, wrapper.message)
-
 		if enableDistribution && wrapper.source != DISTRIBUTOR {
 			outgoing <- wrapper.message
 		}
