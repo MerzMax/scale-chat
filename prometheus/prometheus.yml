@@ -21,7 +21,7 @@ scrape_configs:
       - source_labels: [ __meta_dockerswarm_service_label_prometheus_job ]
         target_label: job
       # Fetch metrics on port 8081.
-      - source_labels: [ __meta_dockerswarm_node_address ]
+      - source_labels: [ __address__ ]
         target_label: __address__
         replacement: $1:8081
 
