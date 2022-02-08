@@ -15,10 +15,17 @@ type Client struct {
 	room      string
 }
 
+type Source int64
+
+const (
+	CLIENT Source = iota
+	DISTRIBUTOR
+)
+
 type MessageWrapper struct {
-	message           *chat.Message
-	processingTimer   *prometheus.Timer
-	sourceDistributor bool
+	message         *chat.Message
+	processingTimer *prometheus.Timer
+	source          Source
 }
 
 //HandleOutgoing sends outgoing messages to the client's websocket connection
@@ -72,7 +79,7 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 			continue
 		}
 
-		wrapper := MessageWrapper{message: &message, processingTimer: timer, sourceDistributor: false}
+		wrapper := MessageWrapper{message: &message, processingTimer: timer, source: CLIENT}
 
 		incoming <- &wrapper
 	}
