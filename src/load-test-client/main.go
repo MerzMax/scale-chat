@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"flag"
+	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
@@ -26,20 +27,26 @@ func main() {
 	msgSize := flag.Int("msg-size", 256,
 		"The size of the messages in bytes (just for load test mode)")
 
-	numOfClients := flag.Int("clients", 1,
-		"Number of clients that will be started (just for load test mode")
+	numOfRooms := flag.Int("rooms", 1,
+		"Number of chat rooms that will be initialized (just for load test mode)")
+
+	roomSize := flag.Int("room-size", 1,
+		"Number of clients that will be started per room (just for load test mode")
 
 	flag.Parse()
 
 	var msgEvents chan *client.MessageEventEntry
 	var cancelFuncs []*context.CancelFunc
 	waitGroup := &sync.WaitGroup{}
+	numOfClients := *numOfRooms * *roomSize
 
 	if !*loadTest {
-		*numOfClients = 1
+		*numOfRooms = 1
+		*roomSize = 1
+		numOfClients = 1
 	}
 
-	waitGroup.Add(*numOfClients)
+	waitGroup.Add(numOfClients)
 
 	var csvWriterCancelFunc *context.CancelFunc
 	csvWriterWaitGroup := &sync.WaitGroup{}
@@ -54,34 +61,40 @@ func main() {
 		csvWriterWaitGroup.Add(1)
 	}
 
-	// Create numOfClients clients that can chat
-	for i := 1; i <= *numOfClients; i++ {
-		log.Printf("Creating client number: %v / %v", i, *numOfClients)
+	// Create rooms
+	for i := 0; i < *numOfRooms; i++ {
+		room := uuid.New().String()
 
-		// Listen to system interrupts -> program will be stopped
-		closeConnection := make(chan os.Signal, 1)
-		signal.Notify(closeConnection, os.Interrupt)
+		// Create clients per room
+		for j := 1; j <= *roomSize; j++ {
+			log.Printf("Creating client number: %v / %v", j, *roomSize)
 
-		ctx, cancelFunc := context.WithCancel(context.Background())
-		cancelFuncs = append(cancelFuncs, &cancelFunc)
+			// Listen to system interrupts -> program will be stopped
+			closeConnection := make(chan os.Signal, 1)
+			signal.Notify(closeConnection, os.Interrupt)
 
-		go func() {
-			chatClient := client.Client{
-				Context:          ctx,
-				WaitGroup:        waitGroup,
-				ServerUrl:        *serverUrl,
-				CloseConnection:  closeConnection,
-				IsLoadTestClient: *loadTest,
-				MsgFrequency:     *msgFrequency,
-				MsgSize:          *msgSize,
-				MsgEvents:        msgEvents,
-			}
+			ctx, cancelFunc := context.WithCancel(context.Background())
+			cancelFuncs = append(cancelFuncs, &cancelFunc)
 
-			err := chatClient.Start()
-			if err != nil {
-				log.Fatalf("%v", err)
-			}
-		}()
+			go func() {
+				chatClient := client.Client{
+					Context:          ctx,
+					WaitGroup:        waitGroup,
+					ServerUrl:        *serverUrl,
+					CloseConnection:  closeConnection,
+					IsLoadTestClient: *loadTest,
+					MsgFrequency:     *msgFrequency,
+					MsgSize:          *msgSize,
+					MsgEvents:        msgEvents,
+					Room:             room,
+				}
+
+				err := chatClient.Start()
+				if err != nil {
+					log.Fatalf("%v", err)
+				}
+			}()
+		}
 	}
 
 	// Listen to system interrupts -> program will be stopped

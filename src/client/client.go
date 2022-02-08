@@ -26,6 +26,7 @@ type Client struct {
 	MsgSize          int
 	MsgFrequency     int
 	MsgEvents        chan<- *MessageEventEntry
+	Room             string
 }
 
 func (client *Client) Start() error {
@@ -34,18 +35,28 @@ func (client *Client) Start() error {
 	if client.IsLoadTestClient {
 		client.id = uuid.New().String()
 	} else {
-		log.Printf("Client started in loadtest mode. Please input your id: ")
+		log.Printf("Client started in loadtest mode.")
+		log.Printf("Please input your id:")
 		input, err := consoleReader.ReadString('\n')
 		// convert CRLF to LF
 		client.id = strings.Replace(input, "\n", "", -1)
 		if err != nil || len(client.id) < 1 {
-			log.Printf("Failed to read the name input. Using default id: MuM")
+			log.Printf("Failed to read the name input. Using default name: MuM")
 			client.id = "MuM"
+		}
+
+		log.Printf("Please input your chat room:")
+		input, err = consoleReader.ReadString('\n')
+		// convert CRLF to LF
+		client.Room = strings.Replace(input, "\n", "", -1)
+		if err != nil || len(client.Room) < 1 {
+			log.Printf("Failed to read the chat room input. Using default id: test")
+			client.Room = "test"
 		}
 	}
 
 	// Connection Establishment
-	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl, nil)
+	wsConnection, _, err := websocket.DefaultDialer.Dial(client.ServerUrl+"/"+client.Room, nil)
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
 	}
@@ -127,7 +138,7 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 				continue
 			}
 
-			// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+			// If the load test mode is activated, there will be added a new message event with the metadata of this message.
 			if client.IsLoadTestClient {
 				var msgEventEntry = MessageEventEntry{
 					ClientId:  client.id,
@@ -137,9 +148,9 @@ func (client *Client) receiveHandler(ctx context.Context, waitGroup *sync.WaitGr
 					Type:      Received,
 				}
 				client.MsgEvents <- &msgEventEntry
-
-				log.Printf("%v", message)
 			}
+
+			log.Printf("%v", message)
 		}
 	}
 }
@@ -193,7 +204,7 @@ func (client *Client) sendHandler(ctx context.Context, waitGroup *sync.WaitGroup
 				return
 			}
 
-			// If the loadtest mode is activated, there will be added a new message event with the metadata of this message.
+			// If the load test mode is activated, there will be added a new message event with the metadata of this message.
 			if client.IsLoadTestClient {
 				var msgEventEntry = MessageEventEntry{
 					ClientId:  client.id,

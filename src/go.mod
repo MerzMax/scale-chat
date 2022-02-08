@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/go-echarts/go-echarts/v2 v2.2.4
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/montanaflynn/stats v0.6.6
 	github.com/prometheus/client_golang v1.11.0
