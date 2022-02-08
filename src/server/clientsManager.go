@@ -56,7 +56,7 @@ func BroadcastMessages(enableDistribution bool, outgoing chan<- *chat.Message) {
 	for wrapper := range incoming {
 		chatHistory = append(chatHistory, wrapper.message)
 
-		if enableDistribution && !wrapper.sourceDistributor {
+		if enableDistribution && wrapper.source != DISTRIBUTOR {
 			outgoing <- wrapper.message
 		}
 

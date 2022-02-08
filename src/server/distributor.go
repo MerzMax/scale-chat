@@ -89,7 +89,7 @@ func (distr *Distributor) Subscribe(serverId string) {
 			continue
 		}
 
-		wrapper := MessageWrapper{message: &distMsg.Message, processingTimer: timer, sourceDistributor: true}
+		wrapper := MessageWrapper{message: &distMsg.Message, processingTimer: timer, source: DISTRIBUTOR}
 
 		incoming <- &wrapper
 	}
