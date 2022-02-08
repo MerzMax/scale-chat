@@ -23,7 +23,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14282,
   "graphTooltip": 0,
-  "iteration": 1644331793174,
+  "iteration": 1644332858021,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -81,7 +81,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -201,7 +201,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -306,7 +306,7 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -791,12 +791,12 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Cadvisor exporter",
   "uid": "pMEd7m0Mz",
-  "version": 1
+  "version": 2
 }
