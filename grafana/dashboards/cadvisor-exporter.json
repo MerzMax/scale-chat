@@ -23,7 +23,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14282,
   "graphTooltip": 0,
-  "iteration": 1643972821121,
+  "iteration": 1644332858021,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -81,15 +81,15 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\".+server.+\",name=~\".+\"}[60s])) *100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\".+(server|redis).+\",name=~\".+\"}[60s])) by (name)",
           "hide": false,
           "interval": "",
-          "legendFormat": "Server",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -124,8 +124,9 @@
       "yaxes": [
         {
           "$$hashKey": "object:606",
-          "format": "percent",
-          "label": null,
+          "decimals": null,
+          "format": "percentunit",
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -200,15 +201,15 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(container_memory_rss{instance=~\"$host\",name=~\".+server.+\",name=~\".+\"})",
+          "expr": "sum(container_memory_rss{instance=~\"$host\",name=~\".+(server|redis).+\",name=~\".+\"}) by (name)",
           "hide": false,
           "interval": "",
-          "legendFormat": "Server",
+          "legendFormat": "{{ name }}",
           "refId": "A"
         }
       ],
@@ -305,15 +306,15 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(container_memory_cache{instance=~\"$host\",name=~\".+server.+\",name=~\".+\"})",
+          "expr": "sum(container_memory_cache{instance=~\"$host\",name=~\".+(server|redis).+\",name=~\".+\"}) by (name)",
           "hide": false,
           "interval": "",
-          "legendFormat": "Server",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -432,7 +433,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[60s])) by (name)",
+          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+(server|redis).+\"}[60s])) by (name)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{name}}",
@@ -527,7 +528,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[60s])) by (name)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+(server|redis).+\"}[60s])) by (name)",
           "interval": "",
           "legendFormat": "{{name}}",
           "refId": "A"
@@ -790,12 +791,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Cadvisor exporter",
   "uid": "pMEd7m0Mz",
-  "version": 1
+  "version": 2
 }

@@ -15,10 +15,17 @@ type Client struct {
 	room      string
 }
 
+type Source int64
+
+const (
+	CLIENT Source = iota
+	DISTRIBUTOR
+)
+
 type MessageWrapper struct {
 	message         *chat.Message
 	processingTimer *prometheus.Timer
-	room            string
+	source          Source
 }
 
 //HandleOutgoing sends outgoing messages to the client's websocket connection
@@ -29,7 +36,7 @@ func (client *Client) HandleOutgoing() {
 	}()
 
 	for wrapper := range client.outgoing {
-		data, err := wrapper.message.ToJSON()
+		data, err := wrapper.message.MarshalBinary()
 		if err != nil {
 			continue
 		}
@@ -41,7 +48,14 @@ func (client *Client) HandleOutgoing() {
 		}
 
 		wrapper.processingTimer.ObserveDuration()
-		MessageCounterVec.WithLabelValues("outgoing").Inc()
+
+		if wrapper.source == CLIENT {
+			MessageCounterVec.WithLabelValues("outgoing_from_client").Inc()
+		}
+
+		if wrapper.source == DISTRIBUTOR {
+			MessageCounterVec.WithLabelValues("outgoing_from_distributor").Inc()
+		}
 	}
 }
 
@@ -62,16 +76,17 @@ func (client *Client) HandleIncoming(incoming chan<- *MessageWrapper) {
 
 		timer := prometheus.NewTimer(MessageProcessingTime)
 
-		MessageCounterVec.WithLabelValues("incoming").Inc()
+		MessageCounterVec.WithLabelValues("incoming_from_client").Inc()
 
 		log.Printf("Received raw message: %s", data)
 
-		message, err := chat.ParseMessage(data)
+		var message chat.Message
+		err = message.UnmarshalBinary(data)
 		if err != nil {
 			continue
 		}
 
-		wrapper := MessageWrapper{message: &message, processingTimer: timer, room: client.room}
+		wrapper := MessageWrapper{message: &message, processingTimer: timer, source: CLIENT}
 
 		incoming <- &wrapper
 	}

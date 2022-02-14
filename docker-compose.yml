@@ -1,12 +1,29 @@
 version: "3"
 
 services:
-  server:
+
+  traefik:
+    image: "traefik:v2.6"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  server-one:
+    image: scale-chat-server
     build:
       context: .
       dockerfile: src/server/Dockerfile
-    ports:
-      - "8080:8080"
+    environment:
+      ENABLE_DIST: "true"
+      DIST_SERVER: "redis:6379"
+      DIST_TOPIC: "messages"
     deploy:
       resources:
           limits:
@@ -15,10 +32,47 @@ services:
           reservations:
             cpus: "0.25"
             memory: 256M
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.service=chat"
+      - "traefik.http.routers.chat.rule=PathPrefix(`/`)"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
 
+  server-two:
+    image: scale-chat-server
+    build:
+      context: .
+      dockerfile: src/server/Dockerfile
+    environment:
+      ENABLE_DIST: "true"
+      DIST_SERVER: "redis:6379"
+      DIST_TOPIC: "messages"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.service=chat"
+      - "traefik.http.routers.chat.rule=PathPrefix(`/`)"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
+
+  redis: 
+    image: redis:6.2.6-alpine
+    ports:
+      - "6379:6379"
 
   prometheus:
     image: prom/prometheus:v2.31.1
+    user: 117:117
     networks:
       - default
     depends_on:
@@ -28,11 +82,13 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/data:/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
   grafana:
     image: grafana/grafana:8.2.5
     environment:
       PROMETHEUS_HOST: http://prometheus:9090
+      # When deploying with docker stack deploy the .env file will be ignored and the default config will be initialized
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
     ports:
@@ -49,5 +105,3 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
     privileged: true
-    depends_on:
-      - server

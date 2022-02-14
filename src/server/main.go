@@ -1,12 +1,17 @@
 package main
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"scale-chat/chat"
+	"strconv"
 )
 
 // WebSocket connection configuration
@@ -16,7 +21,53 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	go BroadcastMessages()
+	// Load env variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Couldn't load .env file.")
+	} else {
+		log.Println("Loaded a configuration via .env.")
+	}
+
+	enableDist := false
+	envEnableDist := os.Getenv("ENABLE_DIST")
+	if envEnableDist != "" {
+		enableDist, err = strconv.ParseBool(envEnableDist)
+		if err != nil {
+			log.Println("Distributor will be disabled")
+		}
+		log.Println("Distributor will be enabled")
+	} else {
+		log.Println("Could not read ENABLE_DIST env variable")
+		log.Println("Distributor will be disabled.")
+	}
+
+	var distributeIncoming chan *chat.Message
+	var distributeOutgoing chan *chat.Message
+	if enableDist {
+		serverId := uuid.New().String()
+		log.Println("ServerId for distribution: ", serverId)
+
+		distributeIncoming = make(chan *chat.Message)
+		distributeOutgoing = make(chan *chat.Message)
+		distr := Distributor{
+			Server:         os.Getenv("DIST_SERVER"),
+			ServerPassword: os.Getenv("DIST_SERVER_PASSWORD"),
+			Topic:          os.Getenv("DIST_TOPIC"),
+			Incoming:       distributeIncoming,
+			Outgoing:       distributeOutgoing,
+		}
+
+		err = distr.Ping()
+		if err != nil {
+			log.Panicln("Couldn't connect to the distributor. Pinging failed", err)
+		}
+
+		go distr.Subscribe(serverId)
+		go distr.Publish(serverId)
+	}
+
+	go BroadcastMessages(enableDist, distributeOutgoing)
 
 	// Register separate ServeMux instances for public endpoints and internal metrics
 	publicMux := mux.NewRouter()

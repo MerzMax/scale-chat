@@ -7,22 +7,21 @@
         window.onload = function () {
             // The messageId will be increased for each message that will be sent.
             var messageId = 0
-                
+
             resetInputFields()
 
             if (!('WebSocket' in window)) {
                 alert('WebSocket NOT supported by your Browser!')
                 return
             }
-          
-            const socket = new WebSocket(`ws://${document.location.host}/ws/demo`)
+
+            const socket = new WebSocket(`ws://${document.location.host}/ws`)
             const userIdInput = document.getElementById('userIdInput')
             const messageInput = document.getElementById('messageInput')
 
             // RECEIVING MESSAGES
             socket.onopen = function (event) {
                 displayStatusMessage('Connection established!', true)
-                displayStatusMessage('Automatically connected to the `demo` chat room.', true)
             }
 
             socket.onclose = function (event) {
@@ -84,7 +83,7 @@
                 // Reset message input and focus element
                 messageInput.value = ""
                 messageInput.focus()
-              
+
                 messageId++
 
                 return false
