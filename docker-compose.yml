@@ -105,5 +105,3 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
     privileged: true
-    depends_on:
-      - server
