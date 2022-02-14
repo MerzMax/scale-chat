@@ -2,19 +2,29 @@ version: "3"
 
 services:
 
-  server:
+  traefik:
+    image: "traefik:v2.6"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  server-one:
     image: scale-chat-server
     build:
       context: .
       dockerfile: src/server/Dockerfile
-    ports:
-      - "80:8080"
     environment:
       ENABLE_DIST: "true"
       DIST_SERVER: "redis:6379"
       DIST_TOPIC: "messages"
     deploy:
-      replicas: 2
       resources:
           limits:
             cpus: "0.25"
@@ -25,8 +35,36 @@ services:
     depends_on:
       - redis
     labels:
-      prometheus-job: "server"
-      prometheus-port: 8081
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.service=chat"
+      - "traefik.http.routers.chat.rule=PathPrefix(`/`)"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
+
+  server-two:
+    image: scale-chat-server
+    build:
+      context: .
+      dockerfile: src/server/Dockerfile
+    environment:
+      ENABLE_DIST: "true"
+      DIST_SERVER: "redis:6379"
+      DIST_TOPIC: "messages"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.service=chat"
+      - "traefik.http.routers.chat.rule=PathPrefix(`/`)"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
+
   redis: 
     image: redis:6.2.6-alpine
     ports:

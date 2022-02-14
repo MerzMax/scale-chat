@@ -3,29 +3,12 @@ global:
   evaluation_interval: 5s
 
 scrape_configs:
-  - job_name: dockerswarm
+  - job_name: golang
     metrics_path: /metrics
-    dockerswarm_sd_configs:
-      - host: unix:///var/run/docker.sock
-        role: tasks
-    relabel_configs:
-      # Only keep containers that should be running.
-      - source_labels: [ __meta_dockerswarm_task_desired_state ]
-        regex: running
-        action: keep
-      # Only keep containers that have a `prometheus-job` label.
-      - source_labels: [ __meta_dockerswarm_service_label_prometheus_job ]
-        regex: .+
-        action: keep
-      # Use the prometheus-job Swarm label as Prometheus job label.
-      - source_labels: [ __meta_dockerswarm_service_label_prometheus_job ]
-        target_label: job
-      # Update scrape address using provided port
-      - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_port]
-        action: replace
-        target_label: __address__
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
+    static_configs:
+      - targets:
+          - server-one:8081
+          - server-two:8081
 
   - job_name: cadvisor
     static_configs:
