@@ -23,7 +23,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 6671,
   "graphTooltip": 0,
-  "iteration": 1644842976239,
+  "iteration": 1644844547353,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -217,7 +217,7 @@
           "exemplar": true,
           "expr": "rate(scale_chat_messages_total{}[10s])",
           "interval": "",
-          "legendFormat": "{{type}}",
+          "legendFormat": "{{instance}}: {{type}}",
           "refId": "A"
         }
       ],
@@ -1473,5 +1473,5 @@
   "timezone": "browser",
   "title": "Go Processes",
   "uid": "ypFZFgvmz",
-  "version": 2
+  "version": 1
 }
