@@ -23,7 +23,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 6671,
   "graphTooltip": 0,
-  "iteration": 1642864955105,
+  "iteration": 1644842976239,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -278,19 +278,25 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "process_resident_memory_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "process_resident_memory_bytes{instance=~\"server.+\"}",
           "format": "time_series",
+          "hide": false,
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - resident",
+          "legendFormat": "{{instance}} - resident",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "process_virtual_memory_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "process_virtual_memory_bytes{instance=~\"server.+\"}",
           "format": "time_series",
+          "hide": false,
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - virtual",
+          "legendFormat": "{{instance}} - virtual",
           "metric": "process_virtual_memory_bytes",
           "refId": "B",
           "step": 4
@@ -317,6 +323,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:199",
           "format": "bytes",
           "label": null,
           "logBase": 1,
@@ -325,6 +332,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:200",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -391,19 +399,23 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(process_resident_memory_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "rate(process_resident_memory_bytes{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - resident",
+          "legendFormat": "{{instance}} - resident",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "deriv(process_virtual_memory_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "deriv(process_virtual_memory_bytes{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - virtual",
+          "legendFormat": "{{instance}} - virtual",
           "metric": "process_virtual_memory_bytes",
           "refId": "B",
           "step": 4
@@ -430,6 +442,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:255",
           "format": "bytes",
           "label": null,
           "logBase": 1,
@@ -438,6 +451,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:256",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -504,38 +518,46 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_memstats_alloc_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "go_memstats_alloc_bytes{instance=~\"server.+\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - bytes allocated",
+          "legendFormat": "{{instance}} - bytes allocated",
           "metric": "go_memstats_alloc_bytes",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "rate(go_memstats_alloc_bytes_total{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[30s])",
+          "exemplar": true,
+          "expr": "rate(go_memstats_alloc_bytes_total{instance=~\"server.+\"}[30s])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - alloc rate",
+          "legendFormat": "{{instance}} - alloc rate",
           "metric": "go_memstats_alloc_bytes_total",
           "refId": "B",
           "step": 4
         },
         {
-          "expr": "go_memstats_stack_inuse_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "go_memstats_stack_inuse_bytes{instance=~\"server.+\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - stack inuse",
+          "legendFormat": "{{instance}} - stack inuse",
           "metric": "go_memstats_stack_inuse_bytes",
           "refId": "C",
           "step": 4
         },
         {
-          "expr": "go_memstats_heap_inuse_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "go_memstats_heap_inuse_bytes{instance=~\"server.+\"}",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - heap inuse",
+          "legendFormat": "{{instance}} - heap inuse",
           "metric": "go_memstats_heap_inuse_bytes",
           "refId": "D",
           "step": 4
@@ -562,6 +584,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:375",
           "format": "bytes",
           "label": null,
           "logBase": 1,
@@ -570,6 +593,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:376",
           "format": "Bps",
           "label": null,
           "logBase": 1,
@@ -636,17 +660,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "deriv(go_memstats_alloc_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "deriv(go_memstats_alloc_bytes{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - bytes allocated",
+          "legendFormat": "{{instance}} - bytes allocated",
           "metric": "go_memstats_alloc_bytes",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "rate(go_memstats_alloc_bytes_total{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "rate(go_memstats_alloc_bytes_total{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{pod}} - alloc rate",
           "metric": "go_memstats_alloc_bytes_total",
@@ -654,20 +682,24 @@
           "step": 4
         },
         {
-          "expr": "deriv(go_memstats_stack_inuse_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "deriv(go_memstats_stack_inuse_bytes{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - stack inuse",
+          "legendFormat": "{{instance}} - stack inuse",
           "metric": "go_memstats_stack_inuse_bytes",
           "refId": "C",
           "step": 4
         },
         {
-          "expr": "deriv(go_memstats_heap_inuse_bytes{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "deriv(go_memstats_heap_inuse_bytes{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}} - heap inuse",
+          "legendFormat": "{{instance}} - heap inuse",
           "metric": "go_memstats_heap_inuse_bytes",
           "refId": "D",
           "step": 4
@@ -694,6 +726,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:319",
           "format": "bytes",
           "label": null,
           "logBase": 1,
@@ -702,6 +735,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:320",
           "format": "Bps",
           "label": null,
           "logBase": 1,
@@ -763,10 +797,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "process_open_fds{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "process_open_fds{instance=~\"server.+\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}}",
+          "legendFormat": "{{instance}}",
           "metric": "process_open_fds",
           "refId": "A",
           "step": 4
@@ -793,6 +829,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:946",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -801,6 +838,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:947",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -862,10 +900,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "deriv(process_open_fds{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}[$interval])",
+          "exemplar": true,
+          "expr": "deriv(process_open_fds{instance=~\"server.+\"}[$interval])",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}}",
+          "legendFormat": "{{instance}}",
           "metric": "process_open_fds",
           "refId": "A",
           "step": 4
@@ -892,6 +932,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:1056",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -900,6 +941,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:1057",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -961,10 +1003,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_goroutines{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "go_goroutines{instance=~\"server.+\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}}",
+          "legendFormat": "{{instance}}",
           "metric": "go_goroutines",
           "refId": "A",
           "step": 4
@@ -991,6 +1035,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:1112",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -999,6 +1044,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:1113",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1060,10 +1106,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_gc_duration_seconds{namespace=~\"^($namespace)$\",pod=~\"^($pod)$\"}",
+          "exemplar": true,
+          "expr": "go_gc_duration_seconds{instance=~\"server.+\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{pod}}: {{quantile}}",
+          "legendFormat": "{{instance}}: {{quantile}}",
           "metric": "go_gc_duration_seconds",
           "refId": "A",
           "step": 4
@@ -1090,6 +1138,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:1168",
           "format": "s",
           "label": null,
           "logBase": 1,
@@ -1098,6 +1147,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:1169",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1183,9 +1233,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "process_cpu_seconds_total",
+          "expr": "process_cpu_seconds_total{instance=~\"server.+\"}",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -1264,9 +1314,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "go_memstats_gc_cpu_fraction",
+          "expr": "go_memstats_gc_cpu_fraction{instance=~\"server.+\"}",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -1423,5 +1473,5 @@
   "timezone": "browser",
   "title": "Go Processes",
   "uid": "ypFZFgvmz",
-  "version": 1
+  "version": 2
 }
