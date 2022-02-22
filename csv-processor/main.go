@@ -19,13 +19,15 @@ func parseFlags() (*string, *Command, error) {
 	var command string
 	var metaFile string
 
-	flag.StringVar(&command, "command", "", "What to execute. Available: sent-vs-received")
+	flag.StringVar(&command, "command", "",
+		"Command you want me to execute. I can calculate latencies with 'latency'"+
+			" or count sent and received messages with 'sent-vs-received'")
 	flag.StringVar(&metaFile, "file", "", "Meta file holding load test result file names")
 	flag.Parse()
 
 	if len(os.Args[1:]) < 2 || len(metaFile) < 1 {
 		return nil, nil, errors.New(
-			fmt.Sprintf("usage %s sent-vs-received --file raw/test-1-old.csv", os.Args[0]),
+			fmt.Sprintf("Invalid signature. Use --help to see the necessary options."),
 		)
 	}
 
@@ -52,8 +54,7 @@ func parseFlags() (*string, *Command, error) {
 func main() {
 	metaFile, command, err := parseFlags()
 	if err != nil {
-		println(err.Error())
-		os.Exit(1)
+		log.Fatal(err.Error())
 	}
 
 	outDir, err := createOutDir(metaFile)
