@@ -16,6 +16,8 @@ type LoadTest struct {
 	filename  string
 }
 
+// parseFile parses the CSV result file written during a load test
+// and returns a slice of messages
 func parseFile(filename string) []Message {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -56,6 +58,7 @@ func parseFile(filename string) []Message {
 	return messages
 }
 
+// createOutDir creates the necessary output directories if they don't already exist.
 func createOutDir(metaFile *string) (*string, error) {
 	outerPath := "./out"
 	_, innerPath := path.Split(*metaFile)
@@ -75,6 +78,9 @@ func createOutDir(metaFile *string) (*string, error) {
 	return &innerPath, nil
 }
 
+// loadResultFiles parses a meta file that contains information on the actual
+// load test result files. The parsed meta file contains the room count, room size
+// and the path to the result file.
 func loadResultFiles(metaFile *string) []LoadTest {
 	f, err := os.Open(*metaFile)
 	if err != nil {
@@ -114,6 +120,8 @@ func loadResultFiles(metaFile *string) []LoadTest {
 	return loadTests
 }
 
+// writeResults writes the data that the executed command produced
+// to a CSV file that is stored at the provided file path.
 func writeResults(filename string, results [][]string) {
 	f, err := os.Create(filename)
 	if err != nil {
