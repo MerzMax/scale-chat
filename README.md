@@ -4,62 +4,50 @@ The Idea is to create a simple chat application and a correspoinding client that
 server might run in several problems regarding scale that need to be fixed. Which problems will occur we are going to 
 see if we go along.
 
-## First steps:
-* Create a simple chat server that broadcastst received messages to all connected clients &rarr; will be implemented in 
-GO
-* Create a corresponding client that publishes messages &rarr; will be implemented in GO
-* Simulate a lot of clients with the help of a load test and see how the server behaves
+There is a blog article available that describes what the idea was and how we went along: 
+[Blog Entry](https://blog.mi.hdm-stuttgart.de)
 
-## Questions that have to be answered: 
-* Communication protocol of clients and server 
-    * Is there some sort of handshake?
-    * What is the content of a chat message?
-    * Plobal chat or private chats?
-* How to create an reproducable environment for the server?
-    * An idea could be a docker container with restricted power to run into problems quiet fast
-* Private chats as well?
-* How to scale the clients? 
-    * An idea could be docker containers; BUT this might lead into problems on a local mashine (starting 1000 dc 
-    could result in performance bottlenecks)
-    * Start several processes in a docker contianer? &rarr; would be a break in the concept of docker
-* How to measure the performance? What could be significant metrics? Is this even necessary?
+### How to run the applications: 
 
-### Communication Protocol
-> What are the messages that will be send by the server and the client?
+#### Server and Monitoring
+There is a docker-compose file available that can be used to deploy the setup in a Docker Swarm cluster. Documentation 
+on how to deploy a docker-compose file can be found 
+[here](https://docs.docker.com/engine/swarm/stack-deploy/#deploy-the-stack-to-the-swarm).
 
-New chat message (global chat):  
-```JSON
-{
-    "clientId": "string",
-    "Message": "string"
-}
+When deployed the chat server will run on port 80. The Grafana dashboards will be accessible at port 3000. There are 
+two dashboards available: 
+* cAdvisor Exporter - contains hardware statistics
+* Go Processes - contains the services custom metrics & metrics provided by the prometheus GO client
+
+#### Clients
+
+There is a demo client available if you just requests port 80 with a browser. Apart from this demo client you can start 
+the load-test-client (`/src/load-test-client`) without any arguments. This will run a simple terminal client that can be 
+used to chat. if you navigate to `/src/load-test-client` you can start the client with the following command: 
+
+```bash
+go run . 
 ```
 
-### Loadtests
-> How to simulate the chat clients and how to measure the server?
+If you want to make a load test you can start the load-test-client with the `--load-test` flag. For a list of all 
+configurations execute the following command in the `/src/load-test-client` folder:
+```bash
+go run . --help 
+```
 
-Metrics that could be usefull: 
-* Number of concurrent client connections &rarr; be aware of the OS limit for a process / mashine
-* Number of chat messages per second 
-* Hardware stats (cpu/ram)
-* Messagesize (variation of message size could lead to different problems)
+##### Client monitoring 
+If the client is getting started in the load-test mode a csv file containing message events will be created. In order 
+to plot the results the events have to be processed. Therefore, a `csv-processor` was implemented. You can run the 
+processor if you are in the `/src/load-test-client/csv-processor` directory with the following command: 
+```bash
+go run . 
+```
+In order to display the configuration possibilities execute the following command: 
+```bash
+go run . --help 
+```
 
-How to measure metrics: 
-* Prometheus for docker hardware stats (there is an adapter available)
-* Grafana for displaying the results
-* Log messages of the server that log messages like the number of connections etc.
+In the end the results can be plotted with Matplotlib, a Python library. 
 
-Server Setup:
-* The server should be contained in a docker-container 
-* The containers resouces should be limited (this makes it easier to run into scaling issues)
+TODO
 
-Client Setup: 
-* To simplify the start of the clients in a reproducable environment the client could run in a docker container as well.
-    
-    There are several posibilities, how the clients clould be started with this approach:
-    1. Start several chat clients within one process
-        * 1 process = 1 docker contianer
-    2. Start several chat client processes
-        * x client processes = 1 docker container %rarr; break in docker concept! 
-* The clients could be started with the help of metadata that will be configured with the help of 
-environment variables 
